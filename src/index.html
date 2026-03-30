@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Familje-Mello</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-dark: #0f0a2e;
+      --bg-card: rgba(255,255,255,0.07);
+      --bg-card-hover: rgba(255,255,255,0.12);
+      --purple: #7c3aed;
+      --pink: #ec4899;
+      --blue: #3b82f6;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --gradient-main: linear-gradient(135deg, #1e1044 0%, #2d1b69 30%, #1a0a3e 60%, #0f0a2e 100%);
+      --gradient-pink: linear-gradient(135deg, #ec4899, #a855f7);
+      --gradient-gold: linear-gradient(135deg, #f59e0b, #fbbf24);
+      --gradient-blue: linear-gradient(135deg, #3b82f6, #7c3aed);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--gradient-main);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(236,72,153,0.1) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.08) 0%, transparent 50%);
+      animation: ambientShift 20s ease-in-out infinite;
+      z-index: 0; pointer-events: none;
+    }
+
+    @keyframes ambientShift {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(2%, -2%) rotate(1deg); }
+      66% { transform: translate(-1%, 1%) rotate(-1deg); }
+    }
+
+    #root { position: relative; z-index: 1; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+    .header { text-align: center; padding: 24px 0 10px; }
+
+    .logo {
+      font-size: 2.8rem; font-weight: 900;
+      background: linear-gradient(135deg, var(--gold), var(--pink), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      letter-spacing: -1px;
+    }
+    .logo-sub { font-size: 0.95rem; color: var(--text-muted); margin-top: 4px; }
+
+    .phase-indicator { display: flex; justify-content: center; gap: 8px; margin: 18px 0 28px; flex-wrap: wrap; }
+    .phase-dot { padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: var(--bg-card); color: var(--text-muted); transition: all 0.3s; }
+    .phase-dot.active { background: var(--gradient-pink); color: white; box-shadow: 0 0 20px rgba(236,72,153,0.3); }
+    .phase-dot.completed { background: rgba(16,185,129,0.2); color: var(--green); }
+
+    .card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 16px; backdrop-filter: blur(10px); transition: all 0.2s; }
+    .card:hover { background: var(--bg-card-hover); }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: var(--gradient-pink); color: white; box-shadow: 0 4px 20px rgba(236,72,153,0.3); }
+    .btn-gold { background: var(--gradient-gold); color: #1a0a3e; box-shadow: 0 4px 20px rgba(245,158,11,0.3); }
+    .btn-blue { background: var(--gradient-blue); color: white; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+    .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
+    .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
+    .btn-lg { padding: 16px 40px; font-size: 1.2rem; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    .input { width: 100%; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+    .input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+    .input::placeholder { color: var(--text-muted); }
+    .input-sm { padding: 8px 12px; font-size: 0.85rem; }
+
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .input-row .input { flex: 1; }
+
+    .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: rgba(124,58,237,0.2); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.2); }
+    .tag .remove { cursor: pointer; opacity: 0.6; font-size: 1rem; line-height: 1; }
+    .tag .remove:hover { opacity: 1; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+    .badge-gold { background: rgba(245,158,11,0.2); color: var(--gold); }
+    .badge-green { background: rgba(16,185,129,0.2); color: var(--green); }
+    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 40px rgba(245,158,11,0.6); } }
+    @keyframes slideReveal { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes starPop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+    @keyframes recapSlideIn { from { opacity: 0; transform: scale(0.85) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes recapGlow { 0% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } 50% { box-shadow: 0 0 60px rgba(236,72,153,0.5), 0 0 100px rgba(124,58,237,0.3); } 100% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } }
+
+    .animate-in { animation: fadeInUp 0.4s ease-out; }
+    .animate-scale { animation: scaleIn 0.3s ease-out; }
+
+    .stars { display: flex; gap: 4px; }
+    .star { font-size: 2rem; cursor: pointer; transition: all 0.15s; user-select: none; filter: grayscale(1) brightness(0.35); }
+    .star:hover { transform: scale(1.15); }
+    .star.active { filter: none; animation: starPop 0.25s ease-out; }
+
+    .video-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 16px; }
+    .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+    .video-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-muted); }
+    .video-placeholder span { font-size: 2rem; }
+
+    .song-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; background: rgba(255,255,255,0.03); margin-bottom: 8px; transition: all 0.2s; }
+    .song-item:hover { background: rgba(255,255,255,0.06); }
+    .song-number { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); flex-shrink: 0; }
+    .song-info { flex: 1; min-width: 0; }
+    .song-title { font-weight: 600; font-size: 0.95rem; }
+    .song-artist { font-size: 0.8rem; color: var(--text-muted); }
+    .song-meta { font-size: 0.7rem; color: var(--text-muted); font-style: italic; }
+
+    .song-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+    .song-tab { position: relative; padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-card); color: var(--text); cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .song-tab:hover { background: var(--bg-card-hover); }
+    .song-tab.active { background: var(--gradient-pink); border-color: transparent; color: white; }
+    .song-tab.voted { border-color: rgba(16,185,129,0.4); }
+    .song-tab .tab-check { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--green); color: white; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+    .voter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; }
+    .voter-row:last-child { border-bottom: none; }
+    .voter-name { font-weight: 600; font-size: 1rem; min-width: 80px; }
+
+    .group-label { text-align: center; font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; background: var(--gradient-pink); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .group-sublabel { text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem; }
+
+    .now-playing { text-align: center; margin-bottom: 12px; }
+    .now-playing-count { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+    .now-playing-song { font-size: 1.3rem; font-weight: 700; }
+    .now-playing-artist { color: var(--text-muted); font-size: 0.9rem; }
+
+    .result-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; margin-bottom: 10px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); }
+    .result-row.qualified { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
+    .result-row.winner { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.15); animation: glow 2s ease-in-out infinite; }
+    .result-position { font-size: 1.4rem; font-weight: 900; width: 36px; text-align: center; }
+    .result-info { flex: 1; }
+    .result-title { font-weight: 700; font-size: 1.05rem; }
+    .result-artist { font-size: 0.85rem; color: var(--text-muted); }
+    .result-score { font-size: 1.3rem; font-weight: 900; color: var(--gold); }
+
+    .winner-container { text-align: center; padding: 40px 20px; }
+    .winner-trophy { font-size: 5rem; margin-bottom: 16px; animation: scaleIn 0.5s ease-out; }
+    .winner-label { font-size: 1.2rem; color: var(--gold); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 3px; }
+    .winner-song { font-size: 2.4rem; font-weight: 900; margin-bottom: 8px; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .winner-artist { font-size: 1.3rem; color: var(--text-muted); margin-bottom: 30px; }
+    .winner-score { font-size: 3rem; font-weight: 900; color: var(--gold); }
+    .winner-score-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; }
+
+    .section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; }
+
+    .nav-arrows { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 12px; }
+    .nav-arrows .btn { min-width: 120px; }
+    .nav-center { flex: 1; text-align: center; }
+
+    .text-center { text-align: center; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+    .mb-16 { margin-bottom: 16px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; }
+
+    .all-voted-banner { text-align: center; padding: 16px; border-radius: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); font-weight: 600; margin-top: 16px; }
+
+    /* Recap */
+    .recap-card {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1));
+      border: 1px solid rgba(236,72,153,0.2);
+      border-radius: 20px; padding: 0; overflow: hidden;
+      animation: recapSlideIn 0.5s ease-out, recapGlow 3s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    .recap-thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+    .recap-info { padding: 24px; text-align: center; }
+    .recap-number { font-size: 0.8rem; color: var(--pink); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 8px; }
+    .recap-song-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+    .recap-song-artist { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 12px; }
+    .recap-score-badge { display: inline-block; padding: 6px 20px; border-radius: 20px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); font-weight: 700; font-size: 1rem; }
+    .recap-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px; overflow: hidden; }
+    .recap-progress-bar { height: 100%; background: var(--gradient-pink); border-radius: 2px; transition: width 0.3s linear; }
+    .recap-controls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; align-items: center; }
+
+    .demo-banner { text-align: center; padding: 16px; border-radius: 12px; background: rgba(59,130,246,0.08); border: 1px dashed rgba(59,130,246,0.3); margin-bottom: 20px; }
+    .demo-banner p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; }
+
+    @media (max-width: 600px) {
+      .logo { font-size: 2rem; }
+      .container { padding: 12px; }
+      .card { padding: 16px; }
+      .star { font-size: 1.6rem; }
+      .input-row { flex-direction: column; }
+      .song-tab { padding: 8px 12px; font-size: 0.8rem; }
+      .recap-song-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useReducer, useEffect, useRef } = React;
+
+    // ==================== DEMO SONGS ====================
+    // 16 songs spanning 1969–2017 — a musical education playlist.
+    // highlightStart = approximate "best bit" timestamp in seconds.
+    // If no highlight is set, the app defaults to ~60% through the video.
+    const DEMO_SONGS = [
+      { title: "Here Comes the Sun",           artist: "The Beatles",                 youtubeId: "KQetemT1sWc", highlightStart: 110, year: "1969" },
+      { title: "Superstition",                  artist: "Stevie Wonder",               youtubeId: "ftdZ363R9kQ", highlightStart: 130, year: "1972" },
+      { title: "Bohemian Rhapsody",             artist: "Queen",                       youtubeId: "fJ9rUzIMcZQ", highlightStart: 180, year: "1975" },
+      { title: "Dancing Queen",                 artist: "ABBA",                        youtubeId: "xFrGuyw1V8s", highlightStart: 52,  year: "1976" },
+      { title: "Billie Jean",                   artist: "Michael Jackson",             youtubeId: "Zi_XLOBDo_Y", highlightStart: 55,  year: "1982" },
+      { title: "Girls Just Want to Have Fun",   artist: "Cyndi Lauper",                youtubeId: "PIb6AZdTr-A", highlightStart: 42,  year: "1983" },
+      { title: "Take On Me",                    artist: "a-ha",                        youtubeId: "djV11Xbc914", highlightStart: 47,  year: "1985" },
+      { title: "I Wanna Dance with Somebody",   artist: "Whitney Houston",             youtubeId: "eH3giaIzONA", highlightStart: 50,  year: "1987" },
+      { title: "Smells Like Teen Spirit",       artist: "Nirvana",                     youtubeId: "hTWKbfoikeg", highlightStart: 33,  year: "1991" },
+      { title: "Everybody (Backstreet's Back)", artist: "Backstreet Boys",             youtubeId: "6M6samPEMpM", highlightStart: 60,  year: "1997" },
+      { title: "Hey Ya!",                       artist: "Outkast",                     youtubeId: "PWgvGjAhvIw", highlightStart: 75,  year: "2003" },
+      { title: "Waka Waka",                     artist: "Shakira",                     youtubeId: "pRpeEdMmmQ0", highlightStart: 95,  year: "2010" },
+      { title: "Happy",                         artist: "Pharrell Williams",           youtubeId: "ZbZSe6N_BXs", highlightStart: 100, year: "2013" },
+      { title: "Uptown Funk",                   artist: "Mark Ronson ft. Bruno Mars",  youtubeId: "OPf0YbXqDm0", highlightStart: 120, year: "2014" },
+      { title: "Despacito",                     artist: "Luis Fonsi ft. Daddy Yankee", youtubeId: "kJQP7kiw5Fk", highlightStart: 75,  year: "2017" },
+      { title: "Around the World",              artist: "Daft Punk",                   youtubeId: "LKYPYj2XX80", highlightStart: 100, year: "1997" },
+    ];
+
+    // ==================== HELPERS ====================
+
+    function extractYouTubeId(url) {
+      if (!url) return null;
+      const t = url.trim();
+      const patterns = [
+        /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+        /^([a-zA-Z0-9_-]{11})$/
+      ];
+      for (const p of patterns) { const m = t.match(p); if (m) return m[1]; }
+      return null;
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    }
+
+    function parseTimestamp(str) {
+      if (!str) return null;
+      const s = str.trim();
+      const cm = s.match(/^(\d+):(\d{1,2})$/);
+      if (cm) return parseInt(cm[1]) * 60 + parseInt(cm[2]);
+      const nm = s.match(/^(\d+)$/);
+      if (nm) return parseInt(nm[1]);
+      return null;
+    }
+
+    function formatTimestamp(sec) {
+      if (sec == null) return '';
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    // Default highlight: ~60% through a typical pop song (~3:30 = 210s)
+    // So default = 210 * 0.6 = 126 seconds. Used when no highlight is set.
+    const DEFAULT_HIGHLIGHT_SEC = 126;
+
+    function getHighlightStart(song) {
+      if (song.highlightStart != null && song.highlightStart > 0) return song.highlightStart;
+      return DEFAULT_HIGHLIGHT_SEC;
+    }
+
+    function fireConfetti() {
+      const dur = 4000, end = Date.now() + dur;
+      const colors = ['#f59e0b', '#ec4899', '#7c3aed', '#3b82f6', '#10b981'];
+      (function frame() {
+        confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 }, colors });
+        confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+
+    function fireMiniConfetti() {
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.65 }, colors: ['#f59e0b', '#ec4899', '#7c3aed'] });
+    }
+
+    function ytThumb(videoId) { return 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg'; }
+
+    // ==================== REDUCER ====================
+
+    const initialState = {
+      phase: 'setup', songs: [], voters: [], groupCount: 4,
+      currentGroup: 0, currentSongIndex: 0, votes: {},
+      finalists: [], finalResults: [], groupResults: {},
+      recapIndex: 0, recapPlaying: false,
+      groupRecapIndex: 0, groupRecapPlaying: false, groupRecapSongs: [],
+    };
+
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'ADD_SONG': {
+          const id = 's' + Date.now() + Math.random().toString(36).substr(2, 4);
+          return { ...state, songs: [...state.songs, { id, ...action.payload, group: -1 }] };
+        }
+        case 'LOAD_DEMO': {
+          const d = DEMO_SONGS.map((s, i) => ({ ...s, id: 'demo' + i, group: -1 }));
+          return { ...state, songs: d };
+        }
+        case 'REMOVE_SONG':
+          return { ...state, songs: state.songs.filter(s => s.id !== action.id) };
+        case 'ADD_VOTER': {
+          const id = 'v' + Date.now() + Math.random().toString(36).substr(2, 4);
+          return { ...state, voters: [...state.voters, { id, name: action.name }] };
+        }
+        case 'REMOVE_VOTER':
+          return { ...state, voters: state.voters.filter(v => v.id !== action.id) };
+        case 'START_TOURNAMENT': {
+          const gc = Math.min(4, Math.ceil(state.songs.length / 3));
+          const sh = shuffleArray(state.songs);
+          const wg = sh.map((s, i) => ({ ...s, group: i % gc }));
+          return { ...state, phase: 'group', songs: wg, groupCount: gc, currentGroup: 0, currentSongIndex: 0, votes: {} };
+        }
+        case 'SET_CURRENT_SONG':
+          return { ...state, currentSongIndex: action.index };
+        case 'SET_VOTE': {
+          const { songId, voterId, stars, voteKey } = action;
+          const pv = { ...(state.votes[voteKey] || {}) };
+          const sv = { ...(pv[songId] || {}) };
+          sv[voterId] = stars;
+          pv[songId] = sv;
+          return { ...state, votes: { ...state.votes, [voteKey]: pv } };
+        }
+        case 'FINISH_GROUP': {
+          const vk = 'group_' + state.currentGroup;
+          const gs = state.songs.filter(s => s.group === state.currentGroup);
+          const pv = state.votes[vk] || {};
+          const sorted = gs.map(song => {
+            const sv = pv[song.id] || {};
+            return { ...song, total: Object.values(sv).reduce((a, b) => a + b, 0) };
+          }).sort((a, b) => b.total - a.total);
+          return { ...state, phase: 'groupRecap', groupRecapSongs: gs, groupRecapIndex: 0, groupRecapPlaying: false, groupResults: { ...state.groupResults, [state.currentGroup]: sorted } };
+        }
+        case 'GROUPRECAP_SET_INDEX':
+          return { ...state, groupRecapIndex: action.index, groupRecapPlaying: false };
+        case 'GROUPRECAP_SET_PLAYING':
+          return { ...state, groupRecapPlaying: action.playing };
+        case 'GROUPRECAP_DONE':
+          return { ...state, phase: 'groupResults' };
+        case 'NEXT_GROUP': {
+          const next = state.currentGroup + 1;
+          if (next >= state.groupCount) {
+            const fin = [];
+            for (let g = 0; g < state.groupCount; g++) { const gr = state.groupResults[g] || []; fin.push(...gr.slice(0, 2)); }
+            return { ...state, phase: 'recap', finalists: fin, recapIndex: 0, recapPlaying: false };
+          }
+          return { ...state, phase: 'group', currentGroup: next, currentSongIndex: 0 };
+        }
+        case 'RECAP_SET_INDEX':
+          return { ...state, recapIndex: action.index, recapPlaying: false };
+        case 'RECAP_SET_PLAYING':
+          return { ...state, recapPlaying: action.playing };
+        case 'RECAP_DONE':
+          return { ...state, phase: 'final', currentSongIndex: 0 };
+        case 'FINISH_FINAL': {
+          const pv = state.votes['final'] || {};
+          const fr = state.finalists.map(song => {
+            const sv = pv[song.id] || {};
+            return { ...song, total: Object.values(sv).reduce((a, b) => a + b, 0) };
+          }).sort((a, b) => b.total - a.total);
+          return { ...state, phase: 'winner', finalResults: fr };
+        }
+        case 'RESET': return { ...initialState };
+        default: return state;
+      }
+    }
+
+    // ==================== COMPONENTS ====================
+
+    function StarRating({ value, onChange }) {
+      const [hover, setHover] = useState(0);
+      return (
+        <div className="stars">
+          {[1,2,3,4,5].map(n => (
+            <span key={n}
+              className={'star' + (n <= (hover || value) ? ' active' : '')}
+              onClick={() => onChange(n)}
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+            >&#11088;</span>
+          ))}
+        </div>
+      );
+    }
+
+    function YouTubeEmbed({ videoId, startTime }) {
+      if (!videoId) return <div className="video-wrap"><div className="video-placeholder"><span>&#127916;</span></div></div>;
+      const origin = window.location.origin || 'http://localhost:8000';
+      let src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&origin=' + encodeURIComponent(origin);
+      if (startTime != null && startTime > 0) src += '&start=' + startTime;
+      return <div className="video-wrap" key={videoId + '_' + (startTime||0)}><iframe src={src} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen title="YouTube" /></div>;
+    }
+
+    function YouTubeClipEmbed({ videoId, startTime, duration }) {
+      if (!videoId) return null;
+      const origin = window.location.origin || 'http://localhost:8000';
+      const s = startTime || 0, e = s + (duration || 25);
+      const src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&autoplay=1&start=' + s + '&end=' + e + '&origin=' + encodeURIComponent(origin);
+      return <div className="video-wrap" key={videoId + '_clip_' + s}><iframe src={src} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen title="Clip" /></div>;
+    }
+
+    function PhaseIndicator({ phase, groupCount, currentGroup }) {
+      const phases = [];
+      for (let i = 0; i < groupCount; i++) phases.push({ key: 'group_' + i, label: 'Delt. ' + (i+1) });
+      phases.push({ key: 'recap', label: 'Recap' });
+      phases.push({ key: 'final', label: 'Final' });
+      let ak = 'setup';
+      if (phase === 'group' || phase === 'groupRecap' || phase === 'groupResults') ak = 'group_' + currentGroup;
+      else if (phase === 'recap') ak = 'recap';
+      else if (phase === 'final') ak = 'final';
+      else if (phase === 'winner') ak = 'done';
+      const ai = phases.findIndex(p => p.key === ak);
+      return (
+        <div className="phase-indicator">
+          {phases.map((p, i) => (
+            <span key={p.key} className={'phase-dot' + (i === ai ? ' active' : '') + ((i < ai || ak === 'done') ? ' completed' : '')}>
+              {(i < ai || ak === 'done') ? '\u2713 ' : ''}{p.label}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    // ==================== SETUP ====================
+
+    function SetupScreen({ state, dispatch }) {
+      const [url, setUrl] = useState('');
+      const [title, setTitle] = useState('');
+      const [artist, setArtist] = useState('');
+      const [highlight, setHighlight] = useState('');
+      const [voterName, setVoterName] = useState('');
+      const [error, setError] = useState('');
+
+      const addSong = () => {
+        const yid = extractYouTubeId(url.trim());
+        if (!yid) { setError('Klistra in en giltig YouTube-l\u00e4nk'); return; }
+        if (!title.trim()) { setError('Fyll i l\u00e5tens titel'); return; }
+        dispatch({ type: 'ADD_SONG', payload: { title: title.trim(), artist: artist.trim(), youtubeId: yid, highlightStart: parseTimestamp(highlight) } });
+        setUrl(''); setTitle(''); setArtist(''); setHighlight(''); setError('');
+      };
+      const addVoter = () => { if (!voterName.trim()) return; dispatch({ type: 'ADD_VOTER', name: voterName.trim() }); setVoterName(''); };
+      const canStart = state.songs.length >= 4 && state.voters.length >= 1;
+      const hk = (e, fn) => { if (e.key === 'Enter') fn(); };
+
+      return (
+        <div className="animate-in">
+          {state.songs.length === 0 && (
+            <div className="demo-banner">
+              <p>Vill du testk&#246;ra? Ladda 16 klassiker fr&#229;n 1969&#8211;2017!</p>
+              <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'LOAD_DEMO' })}>&#127925; Ladda demol&#229;tar</button>
+            </div>
+          )}
+          <div className="card">
+            <div className="card-title">&#127925; L&#228;gg till l&#229;tar</div>
+            <div className="input-row">
+              <input className="input" placeholder="YouTube-l\u00e4nk" value={url} onChange={e => setUrl(e.target.value)} />
+            </div>
+            <div className="input-row">
+              <input className="input" placeholder="Titel" value={title} onChange={e => setTitle(e.target.value)} />
+              <input className="input" placeholder="Artist (valfritt)" value={artist} onChange={e => setArtist(e.target.value)} />
+            </div>
+            <div className="input-row">
+              <input className="input input-sm" placeholder="Highlight-tid, t.ex. 1:05 (valfritt — standard: 60% in)" value={highlight} onChange={e => setHighlight(e.target.value)} onKeyDown={e => hk(e, addSong)} style={{ maxWidth: 320 }} />
+              <button className="btn btn-primary btn-sm" onClick={addSong}>+ L&#228;gg till</button>
+            </div>
+            {error && <div style={{ color: 'var(--red)', fontSize: '0.85rem', marginTop: 4 }}>{error}</div>}
+            {state.songs.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>{state.songs.length} l&#229;tar tillagda</div>
+                {state.songs.map((song, i) => (
+                  <div key={song.id} className="song-item">
+                    <div className="song-number">{i + 1}</div>
+                    <div className="song-info">
+                      <div className="song-title">{song.title}</div>
+                      {song.artist && <div className="song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>}
+                      {song.highlightStart != null && <div className="song-meta">Highlight: {formatTimestamp(song.highlightStart)}</div>}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'REMOVE_SONG', id: song.id })} style={{ padding: '4px 10px', fontSize: '0.8rem' }}>&#10005;</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="card">
+            <div className="card-title">&#128104;&#8205;&#128105;&#8205;&#128103;&#8205;&#128102; R&#246;stare</div>
+            <div className="input-row">
+              <input className="input" placeholder="Namn" value={voterName} onChange={e => setVoterName(e.target.value)} onKeyDown={e => hk(e, addVoter)} />
+              <button className="btn btn-primary btn-sm" onClick={addVoter}>+ L&#228;gg till</button>
+            </div>
+            {state.voters.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                {state.voters.map(v => <span key={v.id} className="tag">{v.name}<span className="remove" onClick={() => dispatch({ type: 'REMOVE_VOTER', id: v.id })}>&#10005;</span></span>)}
+              </div>
+            )}
+          </div>
+          <div className="text-center mt-24">
+            <button className="btn btn-gold btn-lg" disabled={!canStart} onClick={() => dispatch({ type: 'START_TOURNAMENT' })}>&#10024; Starta Familje-Mello! &#10024;</button>
+            {!canStart && <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 12 }}>L&#228;gg till minst 4 l&#229;tar och 1 r&#246;stare</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== SONG STAGE ====================
+
+    function SongStageScreen({ state, dispatch, songs, voteKey, groupLabel, groupSub, onFinish, finishLabel }) {
+      const cur = songs[state.currentSongIndex] || songs[0];
+      const ci = state.currentSongIndex;
+      const pv = state.votes[voteKey] || {};
+      const isVoted = (sid) => { const sv = pv[sid] || {}; return state.voters.every(v => sv[v.id] != null); };
+      const allDone = songs.every(s => isVoted(s.id));
+      const curVotes = pv[cur.id] || {};
+      const curDone = isVoted(cur.id);
+      const votedN = songs.filter(s => isVoted(s.id)).length;
+      const go = (i) => dispatch({ type: 'SET_CURRENT_SONG', index: i });
+      const vote = (vid, stars) => dispatch({ type: 'SET_VOTE', songId: cur.id, voterId: vid, stars, voteKey });
+
+      return (
+        <div className="animate-in">
+          <div className="group-label">{groupLabel}</div>
+          <div className="group-sublabel">{groupSub}</div>
+          <div className="song-tabs">
+            {songs.map((s, i) => {
+              const v = isVoted(s.id);
+              return <button key={s.id} className={'song-tab' + (i === ci ? ' active' : '') + (v ? ' voted' : '')} onClick={() => go(i)}>{i+1}. {s.title}{v && <span className="tab-check">&#10003;</span>}</button>;
+            })}
+          </div>
+          <div className="now-playing">
+            <div className="now-playing-count">L&#229;t {ci+1} av {songs.length}</div>
+            <div className="now-playing-song">{cur.title}</div>
+            {cur.artist && <div className="now-playing-artist">{cur.artist}</div>}
+          </div>
+          <YouTubeEmbed videoId={cur.youtubeId} />
+          <div className="card">
+            <div className="card-title">R&#246;sta p&#229; denna l&#229;t</div>
+            {state.voters.map(v => (
+              <div key={v.id} className="voter-row">
+                <div className="voter-name">{v.name}</div>
+                <StarRating value={curVotes[v.id] || 0} onChange={(s) => vote(v.id, s)} />
+              </div>
+            ))}
+            {curDone && <div className="all-voted-banner" style={{ marginTop: 12 }}>&#10003; Alla har r&#246;stat!</div>}
+          </div>
+          <div className="nav-arrows">
+            <button className="btn btn-ghost" onClick={() => go(ci-1)} disabled={ci === 0}>&#8592; F&#246;rra</button>
+            <div className="nav-center" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{votedN} av {songs.length} klara</div>
+            {ci < songs.length - 1
+              ? <button className="btn btn-blue" onClick={() => go(ci+1)}>N&#228;sta &#8594;</button>
+              : <div style={{ width: 120 }} />}
+          </div>
+          {allDone && <div className="text-center mt-24 animate-scale"><button className="btn btn-gold btn-lg" onClick={onFinish}>{finishLabel}</button></div>}
+          {!allDone && <div className="text-center mt-16" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Ge stj&#228;rnor till alla l&#229;tar f&#246;r att g&#229; vidare</div>}
+        </div>
+      );
+    }
+
+    // ==================== GROUP RESULTS ====================
+
+    function GroupResultsScreen({ state, dispatch }) {
+      const res = state.groupResults[state.currentGroup] || [];
+      const last = state.currentGroup >= state.groupCount - 1;
+      useEffect(() => { fireMiniConfetti(); }, []);
+      return (
+        <div className="animate-in">
+          <div className="group-label">Resultat &#8212; Delt&#228;vling {state.currentGroup + 1}</div>
+          <div className="group-sublabel">Topp 2 g&#229;r vidare till finalen!</div>
+          <div style={{ marginTop: 16 }}>
+            {res.map((s, i) => {
+              const q = i < 2;
+              return (
+                <div key={s.id} className={'result-row' + (q ? ' qualified' : '')} style={{ animation: 'slideReveal 0.4s ease-out ' + (i*0.15) + 's both' }}>
+                  <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
+                  <div className="result-info"><div className="result-title">{s.title}</div>{s.artist && <div className="result-artist">{s.artist}</div>}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}><div className="result-score">{s.total}</div>{q ? <span className="badge badge-gold">FINAL</span> : <span className="badge badge-red">Ute</span>}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-center mt-24">
+            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'NEXT_GROUP' })}>
+              {last ? '\uD83C\uDFC6 Till recapen!' : '\u27A1\uFE0F Delt\u00e4vling ' + (state.currentGroup + 2)}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== GROUP RECAP ====================
+
+    function GroupRecapScreen({ state, dispatch }) {
+      const { groupRecapSongs, groupRecapIndex, groupRecapPlaying, currentGroup } = state;
+      const songs = groupRecapSongs;
+      const song = songs[groupRecapIndex];
+      const isLast = groupRecapIndex >= songs.length - 1;
+      const CLIP_DUR = 20;
+      const [progress, setProgress] = useState(0);
+      const timerRef = useRef(null);
+
+      useEffect(() => {
+        setProgress(0);
+        if (groupRecapPlaying) {
+          const start = Date.now();
+          timerRef.current = setInterval(() => {
+            const el = (Date.now() - start) / 1000;
+            setProgress(Math.min(100, (el / CLIP_DUR) * 100));
+            if (el >= CLIP_DUR) {
+              clearInterval(timerRef.current);
+              if (!isLast) dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex + 1 });
+              else dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: false });
+            }
+          }, 200);
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+      }, [groupRecapIndex, groupRecapPlaying]);
+
+      if (!song) return null;
+
+      return (
+        <div className="animate-in" key={'gr' + groupRecapIndex}>
+          <div className="group-label">Recap &#8212; Delt&#228;vling {currentGroup + 1}</div>
+          <div className="group-sublabel">{groupRecapPlaying ? 'H\u00f6jdpunkter fr\u00e5n omg\u00e5ngen!' : 'L\u00e5t oss minnas l\u00e5tarna innan vi ser resultatet'}</div>
+
+          <div className="recap-card">
+            {groupRecapPlaying ? (
+              <YouTubeClipEmbed videoId={song.youtubeId} startTime={getHighlightStart(song)} duration={CLIP_DUR} />
+            ) : (
+              <img className="recap-thumb" src={ytThumb(song.youtubeId)} alt={song.title} onError={(e) => { e.target.style.background = '#1a0a3e'; e.target.style.minHeight = '200px'; }} />
+            )}
+            <div className="recap-info">
+              <div className="recap-number">L&#229;t {groupRecapIndex + 1} av {songs.length}</div>
+              <div className="recap-song-title">{song.title}</div>
+              <div className="recap-song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>
+              {groupRecapPlaying && <div className="recap-progress"><div className="recap-progress-bar" style={{ width: progress + '%' }} /></div>}
+            </div>
+          </div>
+
+          <div className="recap-controls">
+            <button className="btn btn-ghost btn-sm" disabled={groupRecapIndex === 0} onClick={() => dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex - 1 })}>&#8592; F&#246;rra</button>
+            {!groupRecapPlaying
+              ? <button className="btn btn-primary" onClick={() => dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: true })}>&#9654; Spela highlight</button>
+              : <button className="btn btn-ghost" onClick={() => dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: false })}>&#9646;&#9646; Paus</button>
+            }
+            {!isLast
+              ? <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex + 1 })}>N&#228;sta &#8594;</button>
+              : <div style={{ width: 100 }} />
+            }
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            {songs.map((_, i) => (
+              <span key={i} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', margin: '0 3px', background: i === groupRecapIndex ? 'var(--pink)' : i < groupRecapIndex ? 'var(--green)' : 'rgba(255,255,255,0.15)', transition: 'all 0.3s' }} />
+            ))}
+          </div>
+
+          <div className="text-center mt-24">
+            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'GROUPRECAP_DONE' })}>&#128202; Visa resultat!</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== FINAL RECAP ====================
+
+    function RecapScreen({ state, dispatch }) {
+      const { finalists, recapIndex, recapPlaying } = state;
+      const song = finalists[recapIndex];
+      const isLast = recapIndex >= finalists.length - 1;
+      const CLIP_DUR = 25;
+      const [progress, setProgress] = useState(0);
+      const timerRef = useRef(null);
+
+      useEffect(() => {
+        setProgress(0);
+        if (recapPlaying) {
+          const start = Date.now();
+          timerRef.current = setInterval(() => {
+            const el = (Date.now() - start) / 1000;
+            setProgress(Math.min(100, (el / CLIP_DUR) * 100));
+            if (el >= CLIP_DUR) {
+              clearInterval(timerRef.current);
+              if (!isLast) dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex + 1 });
+              else dispatch({ type: 'RECAP_SET_PLAYING', playing: false });
+            }
+          }, 200);
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+      }, [recapIndex, recapPlaying]);
+
+      return (
+        <div className="animate-in" key={recapIndex}>
+          <div className="group-label">&#9733; Finalisterna &#9733;</div>
+          <div className="group-sublabel">{recapPlaying ? 'Lyssna p\u00e5 h\u00f6jdpunkterna!' : 'M\u00f6t alla som g\u00e5tt vidare till finalen'}</div>
+
+          <div className="recap-card">
+            {recapPlaying ? (
+              <YouTubeClipEmbed videoId={song.youtubeId} startTime={getHighlightStart(song)} duration={CLIP_DUR} />
+            ) : (
+              <img className="recap-thumb" src={ytThumb(song.youtubeId)} alt={song.title} onError={(e) => { e.target.style.background = '#1a0a3e'; e.target.style.minHeight = '200px'; }} />
+            )}
+            <div className="recap-info">
+              <div className="recap-number">Finalist {recapIndex + 1} av {finalists.length}</div>
+              <div className="recap-song-title">{song.title}</div>
+              <div className="recap-song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>
+              <div className="recap-score-badge">&#9733; {song.total || '?'} po&#228;ng i gruppen</div>
+              {recapPlaying && <div className="recap-progress"><div className="recap-progress-bar" style={{ width: progress + '%' }} /></div>}
+            </div>
+          </div>
+
+          <div className="recap-controls">
+            <button className="btn btn-ghost btn-sm" disabled={recapIndex === 0} onClick={() => dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex - 1 })}>&#8592; F&#246;rra</button>
+            {!recapPlaying
+              ? <button className="btn btn-primary" onClick={() => dispatch({ type: 'RECAP_SET_PLAYING', playing: true })}>&#9654; Spela highlight</button>
+              : <button className="btn btn-ghost" onClick={() => dispatch({ type: 'RECAP_SET_PLAYING', playing: false })}>&#9646;&#9646; Paus</button>
+            }
+            {!isLast
+              ? <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex + 1 })}>N&#228;sta &#8594;</button>
+              : <div style={{ width: 100 }} />
+            }
+          </div>
+
+          {/* Dot indicators */}
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            {finalists.map((_, i) => (
+              <span key={i} style={{
+                display: 'inline-block', width: 10, height: 10, borderRadius: '50%', margin: '0 3px',
+                background: i === recapIndex ? 'var(--pink)' : i < recapIndex ? 'var(--green)' : 'rgba(255,255,255,0.15)',
+                transition: 'all 0.3s',
+              }} />
+            ))}
+          </div>
+
+          <div className="text-center mt-24">
+            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'RECAP_DONE' })}>&#127942; Till finalomr&#246;stningen!</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== WINNER ====================
+
+    function WinnerScreen({ state, dispatch }) {
+      const w = state.finalResults[0];
+      useEffect(() => { const t = setTimeout(fireConfetti, 300); return () => clearTimeout(t); }, []);
+      return (
+        <div className="animate-in">
+          <div className="winner-container">
+            <div className="winner-trophy">&#127942;</div>
+            <div className="winner-label">Vinnare av Familje-Mello</div>
+            <div className="winner-song">{w.title}</div>
+            {w.artist && <div className="winner-artist">{w.artist}</div>}
+            <div className="winner-score">{w.total} po&#228;ng</div>
+            <div className="winner-score-label">av max {state.voters.length * 5}</div>
+          </div>
+          <div className="section-title">Slutst&#228;llning</div>
+          {state.finalResults.map((s, i) => (
+            <div key={s.id} className={'result-row' + (i===0?' winner':'')} style={{ animation: 'slideReveal 0.4s ease-out '+(i*0.1)+'s both' }}>
+              <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
+              <div className="result-info"><div className="result-title">{s.title}</div>{s.artist && <div className="result-artist">{s.artist}</div>}</div>
+              <div className="result-score">{s.total}</div>
+            </div>
+          ))}
+          <div className="text-center mt-24" style={{ marginBottom: 40 }}>
+            <button className="btn btn-primary btn-lg" onClick={fireConfetti}>&#127881; Mer konfetti!</button>
+            <div style={{ marginTop: 16 }}><button className="btn btn-ghost" onClick={() => dispatch({ type: 'RESET' })}>Nytt Mello</button></div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== APP ====================
+
+    function App() {
+      const [state, dispatch] = useReducer(reducer, initialState);
+      return (
+        <div className="container">
+          <div className="header">
+            <div className="logo">Familje-Mello</div>
+            <div className="logo-sub">Familjens egen musikt&#228;vling</div>
+          </div>
+          {state.phase !== 'setup' && <PhaseIndicator phase={state.phase} groupCount={state.groupCount} currentGroup={state.currentGroup} />}
+          <div style={{ flex: 1, paddingBottom: 20 }}>
+            {state.phase === 'setup' && <SetupScreen state={state} dispatch={dispatch} />}
+            {state.phase === 'group' && (
+              <SongStageScreen key={'g'+state.currentGroup} state={state} dispatch={dispatch}
+                songs={state.songs.filter(s => s.group === state.currentGroup)}
+                voteKey={'group_'+state.currentGroup}
+                groupLabel={'Delt\u00e4vling '+(state.currentGroup+1)+' av '+state.groupCount}
+                groupSub="Titta och r&#246;sta p&#229; en l&#229;t i taget"
+                onFinish={() => dispatch({ type: 'FINISH_GROUP' })}
+                finishLabel="&#128202; Visa resultat!"
+              />
+            )}
+            {state.phase === 'groupRecap' && <GroupRecapScreen state={state} dispatch={dispatch} />}
+            {state.phase === 'groupResults' && <GroupResultsScreen state={state} dispatch={dispatch} />}
+            {state.phase === 'recap' && <RecapScreen state={state} dispatch={dispatch} />}
+            {state.phase === 'final' && (
+              <SongStageScreen key="final" state={state} dispatch={dispatch}
+                songs={state.finalists} voteKey="final"
+                groupLabel="&#11088; FINALEN &#11088;"
+                groupSub={state.finalists.length + ' finalister \u2014 r&#246;sta en sista g&#229;ng!'}
+                onFinish={() => dispatch({ type: 'FINISH_FINAL' })}
+                finishLabel="&#127942; Visa vinnaren!"
+              />
+            )}
+            {state.phase === 'winner' && <WinnerScreen state={state} dispatch={dispatch} />}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
