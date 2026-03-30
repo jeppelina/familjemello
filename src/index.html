@@ -225,26 +225,32 @@
     const { useState, useReducer, useEffect, useRef } = React;
 
     // ==================== DEMO SONGS ====================
-    // 16 songs spanning 1969–2017 — a musical education playlist.
-    // highlightStart = approximate "best bit" timestamp in seconds.
-    // If no highlight is set, the app defaults to ~60% through the video.
+    // 16 songs curated for boys (7, 7, 4) who love MJ and attitude.
+    // Picked for: energy, swagger, iconic music videos, variety across decades.
+    // highlightStart = the "best bit" timestamp in seconds for recaps.
     const DEMO_SONGS = [
-      { title: "Here Comes the Sun",           artist: "The Beatles",                 youtubeId: "KQetemT1sWc", highlightStart: 110, year: "1969" },
-      { title: "Superstition",                  artist: "Stevie Wonder",               youtubeId: "ftdZ363R9kQ", highlightStart: 130, year: "1972" },
-      { title: "Bohemian Rhapsody",             artist: "Queen",                       youtubeId: "fJ9rUzIMcZQ", highlightStart: 180, year: "1975" },
-      { title: "Dancing Queen",                 artist: "ABBA",                        youtubeId: "xFrGuyw1V8s", highlightStart: 52,  year: "1976" },
-      { title: "Billie Jean",                   artist: "Michael Jackson",             youtubeId: "Zi_XLOBDo_Y", highlightStart: 55,  year: "1982" },
-      { title: "Girls Just Want to Have Fun",   artist: "Cyndi Lauper",                youtubeId: "PIb6AZdTr-A", highlightStart: 42,  year: "1983" },
-      { title: "Take On Me",                    artist: "a-ha",                        youtubeId: "djV11Xbc914", highlightStart: 47,  year: "1985" },
-      { title: "I Wanna Dance with Somebody",   artist: "Whitney Houston",             youtubeId: "eH3giaIzONA", highlightStart: 50,  year: "1987" },
-      { title: "Smells Like Teen Spirit",       artist: "Nirvana",                     youtubeId: "hTWKbfoikeg", highlightStart: 33,  year: "1991" },
-      { title: "Everybody (Backstreet's Back)", artist: "Backstreet Boys",             youtubeId: "6M6samPEMpM", highlightStart: 60,  year: "1997" },
-      { title: "Hey Ya!",                       artist: "Outkast",                     youtubeId: "PWgvGjAhvIw", highlightStart: 75,  year: "2003" },
-      { title: "Waka Waka",                     artist: "Shakira",                     youtubeId: "pRpeEdMmmQ0", highlightStart: 95,  year: "2010" },
-      { title: "Happy",                         artist: "Pharrell Williams",           youtubeId: "ZbZSe6N_BXs", highlightStart: 100, year: "2013" },
-      { title: "Uptown Funk",                   artist: "Mark Ronson ft. Bruno Mars",  youtubeId: "OPf0YbXqDm0", highlightStart: 120, year: "2014" },
-      { title: "Despacito",                     artist: "Luis Fonsi ft. Daddy Yankee", youtubeId: "kJQP7kiw5Fk", highlightStart: 75,  year: "2017" },
-      { title: "Around the World",              artist: "Daft Punk",                   youtubeId: "LKYPYj2XX80", highlightStart: 100, year: "1997" },
+      // MJ x2 — their heroes, and two of the greatest music videos ever made
+      { title: "Thriller",                      artist: "Michael Jackson",             youtubeId: "sOnqjkJTMaA", highlightStart: 438, year: "1982" },  // zombie dance!
+      { title: "Smooth Criminal",               artist: "Michael Jackson",             youtubeId: "h_D3VFfhvs4", highlightStart: 250, year: "1988" },  // the lean!
+      // Rock attitude
+      { title: "Bohemian Rhapsody",             artist: "Queen",                       youtubeId: "fJ9rUzIMcZQ", highlightStart: 180, year: "1975" },  // operatic section
+      { title: "Seven Nation Army",             artist: "The White Stripes",           youtubeId: "0J2QdDbelmY", highlightStart: 20,  year: "2003" },  // THAT riff
+      { title: "Smells Like Teen Spirit",       artist: "Nirvana",                     youtubeId: "hTWKbfoikeg", highlightStart: 33,  year: "1991" },  // chaos energy
+      // Electronic / dance — Daft Punk vibes
+      { title: "Around the World",              artist: "Daft Punk",                   youtubeId: "LKYPYj2XX80", highlightStart: 100, year: "1997" },  // robot dancers
+      { title: "Virtual Insanity",              artist: "Jamiroquai",                  youtubeId: "4JkIs37a2JE", highlightStart: 60,  year: "1996" },  // moving floor magic
+      { title: "Weapon of Choice",              artist: "Fatboy Slim",                 youtubeId: "wCDIYvFmgW8", highlightStart: 70,  year: "2001" },  // Christopher Walken FLIES
+      // Mind-blowing music videos
+      { title: "Take On Me",                    artist: "a-ha",                        youtubeId: "djV11Xbc914", highlightStart: 47,  year: "1985" },  // comic book animation
+      { title: "Sledgehammer",                  artist: "Peter Gabriel",               youtubeId: "OJWJE0x7T4Q", highlightStart: 80,  year: "1986" },  // stop-motion masterpiece
+      { title: "Here It Goes Again",            artist: "OK Go",                       youtubeId: "dTAAsCNK7RA", highlightStart: 30,  year: "2006" },  // treadmill choreography!
+      { title: "Feel Good Inc",                 artist: "Gorillaz",                    youtubeId: "HyHNuVaZJ-k", highlightStart: 45,  year: "2005" },  // animated band
+      // Hip hop swagger
+      { title: "Intergalactic",                 artist: "Beastie Boys",                youtubeId: "qORYO0atB6g", highlightStart: 50,  year: "1998" },  // giant robot in Tokyo!
+      // Pure fun — singalongs and dancing
+      { title: "Uptown Funk",                   artist: "Mark Ronson ft. Bruno Mars",  youtubeId: "OPf0YbXqDm0", highlightStart: 60,  year: "2014" },  // maximum swagger
+      { title: "Gangnam Style",                 artist: "PSY",                         youtubeId: "9bZkp7q19f0", highlightStart: 60,  year: "2012" },  // THE dance, boys will lose it
+      { title: "Happy",                         artist: "Pharrell Williams",           youtubeId: "ZbZSe6N_BXs", highlightStart: 100, year: "2013" },  // pure joy
     ];
 
     // ==================== HELPERS ====================
