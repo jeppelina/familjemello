@@ -369,7 +369,7 @@
           return { ...state, phase: 'groupRecap', groupRecapSongs: gs, groupRecapIndex: 0, groupRecapPlaying: false, groupResults: { ...state.groupResults, [state.currentGroup]: sorted } };
         }
         case 'GROUPRECAP_SET_INDEX':
-          return { ...state, groupRecapIndex: action.index, groupRecapPlaying: false };
+          return { ...state, groupRecapIndex: action.index, groupRecapPlaying: action.autoplay !== false };
         case 'GROUPRECAP_SET_PLAYING':
           return { ...state, groupRecapPlaying: action.playing };
         case 'GROUPRECAP_DONE':
@@ -384,7 +384,7 @@
           return { ...state, phase: 'group', currentGroup: next, currentSongIndex: 0 };
         }
         case 'RECAP_SET_INDEX':
-          return { ...state, recapIndex: action.index, recapPlaying: false };
+          return { ...state, recapIndex: action.index, recapPlaying: action.autoplay !== false };
         case 'RECAP_SET_PLAYING':
           return { ...state, recapPlaying: action.playing };
         case 'RECAP_DONE':
