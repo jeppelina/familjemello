@@ -1,0 +1,8 @@
+# Secrets — never commit
+supabase keys.rtf
+*.rtf
+.env
+.env.*
+
+# macOS
+.DS_Store

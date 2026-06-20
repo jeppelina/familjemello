@@ -8,6 +8,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -115,6 +117,94 @@
     @keyframes recapSlideIn { from { opacity: 0; transform: scale(0.85) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     @keyframes recapGlow { 0% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } 50% { box-shadow: 0 0 60px rgba(236,72,153,0.5), 0 0 100px rgba(124,58,237,0.3); } 100% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } }
 
+    /* === SHOW FLAIR ANIMATIONS === */
+    @keyframes introZoom { 0% { opacity: 0; transform: scale(0.3) rotate(-5deg); } 60% { opacity: 1; transform: scale(1.08) rotate(1deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+    @keyframes introShine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    @keyframes introFadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes introPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.15); opacity: 1; } }
+    @keyframes spotlightSweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes floatParticle { 0% { transform: translateY(0) scale(1); opacity: 0.7; } 50% { opacity: 1; } 100% { transform: translateY(-120vh) scale(0.3); opacity: 0; } }
+    @keyframes resultBarGrow { from { width: 0; } to { width: var(--bar-width); } }
+    @keyframes shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+    @keyframes countdownPop { 0% { transform: scale(0.2); opacity: 0; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes winnerGlow { 0%, 100% { text-shadow: 0 0 20px rgba(245,158,11,0.5); } 50% { text-shadow: 0 0 60px rgba(245,158,11,0.9), 0 0 100px rgba(236,72,153,0.5); } }
+    @keyframes stageLight { 0%, 100% { opacity: 0.03; transform: scaleY(1); } 50% { opacity: 0.08; transform: scaleY(1.1); } }
+
+    /* Intro screen */
+    .intro-screen { position: relative; text-align: center; padding: 60px 20px 40px; overflow: hidden; min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .intro-screen::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, transparent 0%, rgba(236,72,153,0.08) 10%, transparent 20%, rgba(124,58,237,0.08) 30%, transparent 40%);
+      animation: spotlightSweep 8s linear infinite; pointer-events: none;
+    }
+    .intro-badge { display: inline-block; padding: 8px 24px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; animation: introFadeUp 0.6s ease-out 0.2s both; }
+    .intro-emoji { font-size: 5rem; margin-bottom: 16px; animation: introZoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both; }
+    .intro-title {
+      font-size: 3rem; font-weight: 900; margin-bottom: 8px;
+      background: linear-gradient(90deg, var(--gold), var(--pink), var(--gold));
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: introZoom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both, introShine 3s linear 1.5s infinite;
+    }
+    .intro-theme { font-size: 1.4rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; animation: introFadeUp 0.6s ease-out 0.6s both; }
+    .intro-songs { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; }
+    .intro-song-pill {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-radius: 14px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px); text-align: left;
+    }
+    .intro-song-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+    .intro-song-info { flex: 1; }
+    .intro-song-title { font-weight: 700; font-size: 0.95rem; }
+    .intro-song-artist { font-size: 0.8rem; color: var(--text-muted); }
+    .intro-start-btn { margin-top: 36px; animation: introFadeUp 0.6s ease-out 1.2s both; }
+    .intro-start-btn .btn { position: relative; overflow: hidden; }
+    .intro-start-btn .btn::after {
+      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2.5s ease-in-out infinite 2s;
+    }
+
+    /* Floating particles */
+    .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle {
+      position: absolute; bottom: -20px; border-radius: 50%;
+      animation: floatParticle var(--dur) ease-in infinite;
+      animation-delay: var(--delay);
+      opacity: 0;
+    }
+
+    /* Stage lights on group/final screens */
+    .stage-lights { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 0; }
+    .stage-light {
+      position: absolute; top: -20%; width: 120px; height: 200%;
+      background: linear-gradient(180deg, var(--light-color) 0%, transparent 60%);
+      opacity: 0.04; transform-origin: top center;
+      animation: stageLight 4s ease-in-out infinite;
+    }
+
+    /* Enhanced recap card — animated border */
+    .recap-card::before {
+      content: ''; position: absolute; inset: -2px; border-radius: 22px; z-index: -1;
+      background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue), var(--pink));
+      background-size: 300% 300%;
+      animation: introShine 4s linear infinite;
+      opacity: 0.6;
+    }
+
+    /* Result bar animation */
+    .result-bar-container { position: relative; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .result-bar { height: 100%; border-radius: 3px; animation: resultBarGrow 1s ease-out forwards; }
+
+    /* Enhanced winner */
+    .winner-song { animation: winnerGlow 2s ease-in-out infinite; }
+
+    @media (max-width: 600px) {
+      .intro-title { font-size: 2rem; }
+      .intro-emoji { font-size: 3.5rem; }
+      .intro-theme { font-size: 1.1rem; }
+    }
+
     .animate-in { animation: fadeInUp 0.4s ease-out; }
     .animate-scale { animation: scaleIn 0.3s ease-out; }
 
@@ -188,6 +278,7 @@
 
     /* Recap */
     .recap-card {
+      position: relative;
       background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1));
       border: 1px solid rgba(236,72,153,0.2);
       border-radius: 20px; padding: 0; overflow: hidden;
@@ -216,6 +307,51 @@
       .song-tab { padding: 8px 12px; font-size: 0.8rem; }
       .recap-song-title { font-size: 1.4rem; }
     }
+
+    /* === Multi-device voting (host QR panel) === */
+    .live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); margin-left: 8px; vertical-align: middle; transition: all 0.3s; }
+    .live-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .vote-panel { border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
+    .vote-panel-body { display: flex; gap: 22px; align-items: center; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+    .vote-panel-qr img { width: 200px; height: 200px; display: block; border-radius: 12px; }
+    .vote-panel-info { text-align: center; }
+    .vote-panel-hint { font-size: 0.8rem; color: var(--text-muted); }
+    .vote-panel-url { font-size: 0.95rem; font-weight: 600; word-break: break-all; max-width: 280px; }
+    .room-code { font-size: 2.2rem; font-weight: 900; letter-spacing: 8px; color: var(--gold); margin-top: 2px; }
+
+    /* === Phone voting view === */
+    .phone-wrap { max-width: 480px; margin: 0 auto; padding: 18px 16px 40px; min-height: 100vh; display: flex; flex-direction: column; }
+    .phone-header { text-align: center; margin-bottom: 18px; }
+    .phone-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; letter-spacing: 1px; }
+    .phone-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 28px 20px; text-align: center; backdrop-filter: blur(10px); }
+    .phone-h { font-size: 1.4rem; font-weight: 800; margin-bottom: 18px; }
+    .phone-eyebrow { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+    .phone-song-title { font-size: 1.7rem; font-weight: 900; line-height: 1.15; }
+    .phone-song-artist { color: var(--text-muted); margin-top: 4px; }
+    .phone-prompt { margin-top: 22px; font-weight: 600; font-size: 1.05rem; }
+    .phone-stars { display: flex; justify-content: center; gap: 10px; margin: 18px 0 8px; }
+    .phone-stars .star { font-size: 3rem; }
+    .phone-voted { color: var(--green); font-weight: 700; margin-top: 6px; }
+    .phone-msg { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; }
+    .phone-count { color: var(--text-muted); font-size: 0.85rem; margin-top: 14px; }
+    .voter-pick-list { display: flex; flex-direction: column; gap: 12px; }
+    .voter-pick-btn { width: 100%; font-size: 1.1rem; padding: 16px; }
+    .phone-vote-row { padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .phone-vote-row:last-child { border-bottom: none; padding-bottom: 4px; }
+    .phone-vote-name { font-weight: 700; font-size: 1.15rem; margin-bottom: 4px; }
+    .phone-vote-check { color: var(--green); }
+    .phone-vote-row .phone-stars { margin: 6px 0 0; gap: 8px; }
+    .phone-vote-row .phone-stars .star { font-size: 2.5rem; }
+
+    /* === Mello-style points reveal === */
+    .reveal-announce { text-align: center; padding: 28px 20px; border-radius: 20px; margin: 8px 0 20px; background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(236,72,153,0.16)); border: 1px solid rgba(236,72,153,0.3); animation: recapSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+    .reveal-announce.winner { background: linear-gradient(135deg, rgba(245,158,11,0.24), rgba(236,72,153,0.18)); border-color: rgba(245,158,11,0.55); animation: recapSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1), glow 1.8s ease-in-out infinite 0.45s; }
+    .reveal-points { font-size: 3.6rem; font-weight: 900; line-height: 1; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; animation: countdownPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    .reveal-goesto { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin: 10px 0 6px; }
+    .reveal-song { font-size: 1.7rem; font-weight: 800; line-height: 1.15; }
+    .reveal-song-artist { color: var(--text-muted); margin-top: 2px; }
+    .result-row.hidden-row { opacity: 0.45; }
+    .result-row .mystery { letter-spacing: 4px; color: var(--text-muted); font-weight: 800; }
   </style>
 </head>
 <body>
@@ -223,6 +359,76 @@
 
   <script type="text/babel">
     const { useState, useReducer, useEffect, useRef } = React;
+
+    // ==================== MULTI-DEVICE VOTING (Supabase) ====================
+    // Dedicated Familje-Mello Supabase project. The anon public key is browser-safe by
+    // design (security comes from RLS, not from hiding it).
+    //   • Live sync (joining, names, votes, ballots) runs over Realtime "broadcast" —
+    //     pure websocket pub/sub, works with or without a database.
+    //   • Durability/resume uses one tiny table `games(id, snapshot, updated_at)`. The
+    //     host snapshots its full state there so an aborted game can be continued.
+    //     If the table is missing, those calls no-op and the app still works live.
+    const SUPABASE_URL = 'https://bhurxoknmyfqymtiaycx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodXJ4b2tubXlmcXltdGlheWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzI5NTAsImV4cCI6MjA5NzU0ODk1MH0.YbblDF0jfZNzdIMy8rMF3t19b7b6onD91VVLi9N8kYg';
+    let _sb = null;
+    function getSupabase() {
+      if (_sb) return _sb;
+      try { if (window.supabase && window.supabase.createClient) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+      catch (e) { console.warn('Supabase init failed', e); }
+      return _sb;
+    }
+    function makeGameCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
+      let c = '';
+      for (let i = 0; i < 5; i++) c += chars[Math.floor(Math.random() * chars.length)];
+      return c;
+    }
+    function genId(prefix) { return (prefix || '') + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+    function getDeviceId() {
+      try { let d = localStorage.getItem('mello_device'); if (!d) { d = genId('d_'); localStorage.setItem('mello_device', d); } return d; }
+      catch (e) { return genId('d_'); }
+    }
+    function getGameParam() {
+      try { const p = new URLSearchParams(window.location.search); const r = p.get('game') || p.get('room'); return r ? r.toUpperCase() : null; }
+      catch (e) { return null; }
+    }
+    // Durable game state — survives a closed/crashed host so a game can be resumed.
+    async function loadGame(id) {
+      const sb = getSupabase(); if (!sb || !id) return null;
+      try {
+        const { data, error } = await sb.from('games').select('snapshot').eq('id', id).maybeSingle();
+        if (error) { console.warn('loadGame:', error.message); return null; }
+        return data ? data.snapshot : null;
+      } catch (e) { console.warn('loadGame failed', e); return null; }
+    }
+    async function saveGame(id, snapshot) {
+      const sb = getSupabase(); if (!sb || !id) return;
+      try {
+        const { error } = await sb.from('games').upsert({ id, snapshot, updated_at: new Date().toISOString() });
+        if (error) console.warn('saveGame:', error.message);
+      } catch (e) { console.warn('saveGame failed', e); }
+    }
+    // Distil the host's current state into the minimal payload a phone needs to render a ballot.
+    function getActiveBallot(state) {
+      const voters = state.voters.map(v => ({ id: v.id, name: v.name }));
+      let songs = null, voteKey = null, label = '';
+      if (state.phase === 'group') {
+        songs = state.songs.filter(s => s.group === state.currentGroup);
+        voteKey = 'group_' + state.currentGroup;
+        label = getGroupTheme(state.currentGroup).name;
+      } else if (state.phase === 'final') {
+        songs = state.finalists; voteKey = 'final'; label = 'Finalen';
+      }
+      if (songs && voteKey) {
+        const idx = Math.min(state.currentSongIndex, songs.length - 1);
+        const cur = songs[idx] || songs[0];
+        if (cur) {
+          const pv = (state.votes[voteKey] || {})[cur.id] || {};
+          return { active: true, voteKey, label, songId: cur.id, title: cur.title, artist: cur.artist || '', songIndex: idx, songCount: songs.length, voters, votes: pv };
+        }
+      }
+      return { active: false, phase: state.phase, voters };
+    }
 
     // ==================== DEMO SONGS ====================
     // 16 songs curated for boys (7, 7, 4) who love MJ and attitude.
@@ -252,6 +458,15 @@
       { title: "Gangnam Style",                 artist: "PSY",                         youtubeId: "9bZkp7q19f0", highlightStart: 60,  year: "2012" },  // THE dance, boys will lose it
       { title: "Happy",                         artist: "Pharrell Williams",           youtubeId: "ZbZSe6N_BXs", highlightStart: 100, year: "2013" },  // pure joy
     ];
+
+    // ==================== GROUP THEMES ====================
+    const GROUP_THEMES = [
+      { name: 'Eldprovet', emoji: '\uD83D\uDD25', tagline: 'Bara de t\u00e5ligaste \u00f6verlever!', accent: '#ef4444', accentRgb: '239,68,68' },
+      { name: 'Neonnatten', emoji: '\uD83C\uDF03', tagline: 'Musiken som lyser i m\u00f6rkret', accent: '#3b82f6', accentRgb: '59,130,246' },
+      { name: 'Guldrushen', emoji: '\u2B50', tagline: 'Vem tar hem skatten?', accent: '#f59e0b', accentRgb: '245,158,11' },
+      { name: 'Rymdresan', emoji: '\uD83D\uDE80', tagline: 'Till finalen \u2014 och bortom!', accent: '#a855f7', accentRgb: '168,85,247' },
+    ];
+    function getGroupTheme(groupIndex) { return GROUP_THEMES[groupIndex % GROUP_THEMES.length]; }
 
     // ==================== HELPERS ====================
 
@@ -337,7 +552,8 @@
         case 'REMOVE_SONG':
           return { ...state, songs: state.songs.filter(s => s.id !== action.id) };
         case 'ADD_VOTER': {
-          const id = 'v' + Date.now() + Math.random().toString(36).substr(2, 4);
+          const id = action.id || ('v' + Date.now() + Math.random().toString(36).substr(2, 4));
+          if (state.voters.some(v => v.id === id)) return state; // idempotent: re-register on resume
           return { ...state, voters: [...state.voters, { id, name: action.name }] };
         }
         case 'REMOVE_VOTER':
@@ -346,8 +562,10 @@
           const gc = Math.min(4, Math.ceil(state.songs.length / 3));
           const sh = shuffleArray(state.songs);
           const wg = sh.map((s, i) => ({ ...s, group: i % gc }));
-          return { ...state, phase: 'group', songs: wg, groupCount: gc, currentGroup: 0, currentSongIndex: 0, votes: {} };
+          return { ...state, phase: 'groupIntro', songs: wg, groupCount: gc, currentGroup: 0, currentSongIndex: 0, votes: {} };
         }
+        case 'START_GROUP':
+          return { ...state, phase: 'group', currentSongIndex: 0 };
         case 'SET_CURRENT_SONG':
           return { ...state, currentSongIndex: action.index };
         case 'SET_VOTE': {
@@ -381,7 +599,7 @@
             for (let g = 0; g < state.groupCount; g++) { const gr = state.groupResults[g] || []; fin.push(...gr.slice(0, 2)); }
             return { ...state, phase: 'recap', finalists: fin, recapIndex: 0, recapPlaying: false };
           }
-          return { ...state, phase: 'group', currentGroup: next, currentSongIndex: 0 };
+          return { ...state, phase: 'groupIntro', currentGroup: next, currentSongIndex: 0 };
         }
         case 'RECAP_SET_INDEX':
           return { ...state, recapIndex: action.index, recapPlaying: action.autoplay !== false };
@@ -398,6 +616,7 @@
           return { ...state, phase: 'winner', finalResults: fr };
         }
         case 'RESET': return { ...initialState };
+        case 'RESTORE': return action.snapshot ? { ...initialState, ...action.snapshot } : state;
         default: return state;
       }
     }
@@ -442,7 +661,7 @@
       phases.push({ key: 'recap', label: 'Recap' });
       phases.push({ key: 'final', label: 'Final' });
       let ak = 'setup';
-      if (phase === 'group' || phase === 'groupRecap' || phase === 'groupResults') ak = 'group_' + currentGroup;
+      if (phase === 'groupIntro' || phase === 'group' || phase === 'groupRecap' || phase === 'groupResults') ak = 'group_' + currentGroup;
       else if (phase === 'recap') ak = 'recap';
       else if (phase === 'final') ak = 'final';
       else if (phase === 'winner') ak = 'done';
@@ -458,9 +677,95 @@
       );
     }
 
+    // ==================== FLOATING PARTICLES ====================
+
+    function FloatingParticles({ accent }) {
+      const particles = useRef([...Array(12)].map(() => ({
+        left: Math.random() * 100 + '%',
+        size: 3 + Math.random() * 5,
+        dur: 6 + Math.random() * 8 + 's',
+        delay: Math.random() * 6 + 's',
+        opacity: 0.3 + Math.random() * 0.5,
+      }))).current;
+      const color = accent || 'var(--pink)';
+      return (
+        <div className="particles">
+          {particles.map((p, i) => (
+            <div key={i} className="particle" style={{
+              left: p.left, width: p.size, height: p.size,
+              background: color,
+              boxShadow: '0 0 ' + (p.size * 2) + 'px ' + color,
+              '--dur': p.dur, '--delay': p.delay,
+            }} />
+          ))}
+        </div>
+      );
+    }
+
+    // ==================== STAGE LIGHTS ====================
+
+    function StageLights({ accent }) {
+      const lights = [
+        { left: '10%', rotate: '8deg', delay: '0s' },
+        { left: '30%', rotate: '-5deg', delay: '1.2s' },
+        { left: '55%', rotate: '3deg', delay: '0.6s' },
+        { left: '75%', rotate: '-7deg', delay: '1.8s' },
+        { left: '90%', rotate: '4deg', delay: '0.3s' },
+      ];
+      return (
+        <div className="stage-lights">
+          {lights.map((l, i) => (
+            <div key={i} className="stage-light" style={{
+              left: l.left, transform: 'rotate(' + l.rotate + ')',
+              '--light-color': accent || 'rgba(236,72,153,0.15)',
+              animationDelay: l.delay,
+            }} />
+          ))}
+        </div>
+      );
+    }
+
+    // ==================== GROUP INTRO ====================
+
+    function GroupIntroScreen({ state, dispatch }) {
+      const theme = getGroupTheme(state.currentGroup);
+      const groupSongs = state.songs.filter(s => s.group === state.currentGroup);
+
+      return (
+        <div className="intro-screen">
+          <FloatingParticles accent={theme.accent} />
+          <StageLights accent={theme.accent} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div className="intro-badge" style={{ background: 'rgba(' + theme.accentRgb + ',0.15)', color: theme.accent, border: '1px solid rgba(' + theme.accentRgb + ',0.3)' }}>
+              Delt\u00e4vling {state.currentGroup + 1} av {state.groupCount}
+            </div>
+            <div className="intro-emoji">{theme.emoji}</div>
+            <div className="intro-title">{theme.name}</div>
+            <div className="intro-theme">{theme.tagline}</div>
+            <div className="intro-songs">
+              {groupSongs.map((s, i) => (
+                <div key={s.id} className="intro-song-pill" style={{ animation: 'introFadeUp 0.5s ease-out ' + (0.8 + i * 0.15) + 's both' }}>
+                  <div className="intro-song-num" style={{ background: 'rgba(' + theme.accentRgb + ',0.2)', color: theme.accent }}>{i + 1}</div>
+                  <div className="intro-song-info">
+                    <div className="intro-song-title">{s.title}</div>
+                    {s.artist && <div className="intro-song-artist">{s.artist}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="intro-start-btn">
+              <button className="btn btn-lg" style={{ background: 'linear-gradient(135deg, ' + theme.accent + ', var(--purple))', color: 'white', boxShadow: '0 4px 30px rgba(' + theme.accentRgb + ',0.4)' }} onClick={() => dispatch({ type: 'START_GROUP' })}>
+                K\u00f6r ig\u00e5ng!
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ==================== SETUP ====================
 
-    function SetupScreen({ state, dispatch }) {
+    function SetupScreen({ state, dispatch, room }) {
       const [url, setUrl] = useState('');
       const [title, setTitle] = useState('');
       const [artist, setArtist] = useState('');
@@ -481,6 +786,13 @@
 
       return (
         <div className="animate-in">
+          {room && room.resumed && (
+            <div className="demo-banner" style={{ borderColor: 'rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.08)' }}>
+              <p>&#128260; &#197;terupptog ett p&#229;g&#229;ende spel (kod {room.code}).</p>
+              <button className="btn btn-ghost btn-sm" onClick={room.newGame}>B&#246;rja ett nytt spel ist&#228;llet</button>
+            </div>
+          )}
+          {room && room.code && <VotePanel code={room.code} connected={room.connected} />}
           {state.songs.length === 0 && (
             <div className="demo-banner">
               <p>Vill du testk&#246;ra? Ladda 16 klassiker fr&#229;n 1969&#8211;2017!</p>
@@ -540,7 +852,7 @@
 
     // ==================== SONG STAGE ====================
 
-    function SongStageScreen({ state, dispatch, songs, voteKey, groupLabel, groupSub, onFinish, finishLabel }) {
+    function SongStageScreen({ state, dispatch, songs, voteKey, groupLabel, groupSub, onFinish, finishLabel, accent, accentRgb, room }) {
       const cur = songs[state.currentSongIndex] || songs[0];
       const ci = state.currentSongIndex;
       const pv = state.votes[voteKey] || {};
@@ -551,11 +863,15 @@
       const votedN = songs.filter(s => isVoted(s.id)).length;
       const go = (i) => dispatch({ type: 'SET_CURRENT_SONG', index: i });
       const vote = (vid, stars) => dispatch({ type: 'SET_VOTE', songId: cur.id, voterId: vid, stars, voteKey });
+      // Votes stay hidden during the deltävling — reveal one voter's stars only while editing.
+      const [editing, setEditing] = useState(null);
+      useEffect(() => { setEditing(null); }, [ci]);
 
       return (
         <div className="animate-in">
           <div className="group-label">{groupLabel}</div>
           <div className="group-sublabel">{groupSub}</div>
+          {room && room.code && <VotePanel code={room.code} connected={room.connected} />}
           <div className="song-tabs">
             {songs.map((s, i) => {
               const v = isVoted(s.id);
@@ -570,13 +886,25 @@
           <YouTubeEmbed videoId={cur.youtubeId} />
           <div className="card">
             <div className="card-title">R&#246;sta p&#229; denna l&#229;t</div>
-            {state.voters.map(v => (
-              <div key={v.id} className="voter-row">
-                <div className="voter-name">{v.name}</div>
-                <StarRating value={curVotes[v.id] || 0} onChange={(s) => vote(v.id, s)} />
-              </div>
-            ))}
+            {state.voters.map(v => {
+              const has = curVotes[v.id] != null;
+              const isEditing = editing === v.id;
+              return (
+                <div key={v.id} className="voter-row">
+                  <div className="voter-name">{v.name}</div>
+                  {isEditing
+                    ? <StarRating value={curVotes[v.id] || 0} onChange={(s) => { vote(v.id, s); setEditing(null); }} />
+                    : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ color: has ? 'var(--green)' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>{has ? '✓ Har röstat' : 'Väntar…'}</span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing(v.id)}>{has ? 'Ändra' : 'Rösta här'}</button>
+                      </div>
+                    )}
+                </div>
+              );
+            })}
             {curDone && <div className="all-voted-banner" style={{ marginTop: 12 }}>&#10003; Alla har r&#246;stat!</div>}
+            <div style={{ textAlign: 'center', marginTop: 12, color: 'var(--text-muted)', fontSize: '0.8rem' }}>Po&#228;ngen &#228;r hemliga tills recapen &#228;r klar &#129323;</div>
           </div>
           <div className="nav-arrows">
             <button className="btn btn-ghost" onClick={() => go(ci-1)} disabled={ci === 0}>&#8592; F&#246;rra</button>
@@ -596,27 +924,102 @@
     function GroupResultsScreen({ state, dispatch }) {
       const res = state.groupResults[state.currentGroup] || [];
       const last = state.currentGroup >= state.groupCount - 1;
-      useEffect(() => { fireMiniConfetti(); }, []);
+      const theme = getGroupTheme(state.currentGroup);
+      const N = res.length;
+      // Classic Mello points awarded by final rank (1st → 12, 2nd → 10, 3rd → 8, 4th → 6 …).
+      // Ranking is still decided by star totals; these are just the points shown.
+      const MELLO_POINTS = [12, 10, 8, 6, 5, 4, 3, 2, 1];
+      const pointsFor = (i) => (MELLO_POINTS[i] != null ? MELLO_POINTS[i] : 1);
+      const maxScore = 12;
+      const [revealCount, setRevealCount] = useState(0);
+      const [playing, setPlaying] = useState(false);
+      const allRevealed = revealCount >= N;
+      const justIndex = revealCount > 0 ? N - revealCount : -1; // res index uncovered this step
+      const justSong = justIndex >= 0 && justIndex < N ? res[justIndex] : null;
+      const winnerReveal = justIndex === 0;
+
+      // Drive the reveal: each step uncovers the next-lowest song, building to the winner.
+      // Extra suspense right before the winner.
+      useEffect(() => {
+        if (!playing || allRevealed) return;
+        const delay = revealCount === 0 ? 500 : (revealCount === N - 1 ? 3400 : 2600);
+        const t = setTimeout(() => setRevealCount(c => Math.min(N, c + 1)), delay);
+        return () => clearTimeout(t);
+      }, [playing, revealCount, allRevealed, N]);
+
+      // Fireworks on each reveal, a full burst for the delt\u00e4vling winner.
+      useEffect(() => {
+        if (revealCount === 0) return;
+        if (N - revealCount === 0) fireConfetti(); else fireMiniConfetti();
+      }, [revealCount]);
+
+      const skip = () => { setPlaying(false); setRevealCount(N); fireConfetti(); };
+
       return (
-        <div className="animate-in">
-          <div className="group-label">Resultat &#8212; Delt&#228;vling {state.currentGroup + 1}</div>
-          <div className="group-sublabel">Topp 2 g&#229;r vidare till finalen!</div>
-          <div style={{ marginTop: 16 }}>
-            {res.map((s, i) => {
-              const q = i < 2;
-              return (
-                <div key={s.id} className={'result-row' + (q ? ' qualified' : '')} style={{ animation: 'slideReveal 0.4s ease-out ' + (i*0.15) + 's both' }}>
-                  <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
-                  <div className="result-info"><div className="result-title">{s.title}</div>{s.artist && <div className="result-artist">{s.artist}</div>}</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}><div className="result-score">{s.total}</div>{q ? <span className="badge badge-gold">FINAL</span> : <span className="badge badge-red">Ute</span>}</div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="text-center mt-24">
-            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'NEXT_GROUP' })}>
-              {last ? '\uD83C\uDFC6 Till recapen!' : '\u27A1\uFE0F Delt\u00e4vling ' + (state.currentGroup + 2)}
-            </button>
+        <div className="animate-in" style={{ position: 'relative' }}>
+          <StageLights accent={theme.accent} />
+          {allRevealed && <FloatingParticles accent={theme.accent} />}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div className="group-label">{theme.emoji} Resultat &#8212; {theme.name}</div>
+            <div className="group-sublabel">Topp 2 g&#229;r vidare till finalen!</div>
+
+            {revealCount === 0 && !playing && (
+              <div className="text-center" style={{ margin: '28px 0' }}>
+                <div style={{ fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: 18 }}>Po&#228;ngen &#228;r hemliga &#8212; dags att avsl&#246;ja dem! &#129321;</div>
+                <button className="btn btn-gold btn-lg" onClick={() => setPlaying(true)}>&#127908; Starta po&#228;ngavsl&#246;jningen</button>
+              </div>
+            )}
+
+            {justSong && (
+              <div key={'ann' + revealCount} className={'reveal-announce' + (winnerReveal ? ' winner' : '')}>
+                <div className="reveal-points">{pointsFor(justIndex)}</div>
+                <div className="reveal-goesto">po&#228;ng {winnerReveal ? '\u2014 och vinner delt\u00e4vlingen!' : 'g\u00E5r till'}</div>
+                <div className="reveal-song">{winnerReveal ? '\uD83C\uDFC6 ' : ''}{justSong.title}</div>
+                {justSong.artist && <div className="reveal-song-artist">{justSong.artist}</div>}
+              </div>
+            )}
+
+            {(playing || revealCount > 0) && (
+              <div style={{ marginTop: 8 }}>
+                {res.map((s, i) => {
+                  const revealed = i >= N - revealCount;
+                  const q = i < 2;
+                  const barPct = Math.round((pointsFor(i) / maxScore) * 100);
+                  return (
+                    <div key={s.id} className={'result-row' + (revealed && q ? ' qualified' : '') + (revealed ? '' : ' hidden-row')} style={{ flexWrap: 'wrap' }}>
+                      <div className="result-position">{revealed ? (i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)) : (i+1)}</div>
+                      <div className="result-info">
+                        <div className="result-title">{revealed ? s.title : <span className="mystery">&#9679; &#9679; &#9679;</span>}</div>
+                        {revealed && s.artist && <div className="result-artist">{s.artist}</div>}
+                        {revealed && (
+                          <div className="result-bar-container">
+                            <div className="result-bar" style={{ '--bar-width': barPct + '%', background: q ? 'var(--gradient-gold)' : 'rgba(255,255,255,0.15)' }} />
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div className="result-score">{revealed ? pointsFor(i) : '\u2013'}</div>
+                        {revealed && (q ? <span className="badge badge-gold">FINAL</span> : <span className="badge badge-red">Ute</span>)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {playing && !allRevealed && (
+              <div className="text-center mt-16">
+                <button className="btn btn-ghost btn-sm" onClick={skip}>&#9197; Hoppa &#246;ver</button>
+              </div>
+            )}
+
+            {allRevealed && (
+              <div className="text-center mt-24">
+                <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'NEXT_GROUP' })}>
+                  {last ? '\uD83C\uDFC6 Till recapen!' : '\u27A1\uFE0F N\u00e4sta delt\u00e4vling'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -632,6 +1035,7 @@
       const CLIP_DUR = 20;
       const [progress, setProgress] = useState(0);
       const timerRef = useRef(null);
+      const theme = getGroupTheme(currentGroup);
 
       useEffect(() => {
         setProgress(0);
@@ -653,8 +1057,10 @@
       if (!song) return null;
 
       return (
-        <div className="animate-in" key={'gr' + groupRecapIndex}>
-          <div className="group-label">Recap &#8212; Delt&#228;vling {currentGroup + 1}</div>
+        <div className="animate-in" key={'gr' + groupRecapIndex} style={{ position: 'relative' }}>
+          <FloatingParticles accent={theme.accent} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className="group-label">{theme.emoji} Recap &#8212; {theme.name}</div>
           <div className="group-sublabel">{groupRecapPlaying ? 'H\u00f6jdpunkter fr\u00e5n omg\u00e5ngen!' : 'L\u00e5t oss minnas l\u00e5tarna innan vi ser resultatet'}</div>
 
           <div className="recap-card">
@@ -692,6 +1098,7 @@
           <div className="text-center mt-24">
             <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'GROUPRECAP_DONE' })}>&#128202; Visa resultat!</button>
           </div>
+          </div>
         </div>
       );
     }
@@ -724,7 +1131,9 @@
       }, [recapIndex, recapPlaying]);
 
       return (
-        <div className="animate-in" key={recapIndex}>
+        <div className="animate-in" key={recapIndex} style={{ position: 'relative' }}>
+          <FloatingParticles accent="#f59e0b" />
+          <div style={{ position: 'relative', zIndex: 1 }}>
           <div className="group-label">&#9733; Finalisterna &#9733;</div>
           <div className="group-sublabel">{recapPlaying ? 'Lyssna p\u00e5 h\u00f6jdpunkterna!' : 'M\u00f6t alla som g\u00e5tt vidare till finalen'}</div>
 
@@ -769,6 +1178,7 @@
           <div className="text-center mt-24">
             <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'RECAP_DONE' })}>&#127942; Till finalomr&#246;stningen!</button>
           </div>
+          </div>
         </div>
       );
     }
@@ -777,10 +1187,13 @@
 
     function WinnerScreen({ state, dispatch }) {
       const w = state.finalResults[0];
+      const maxScore = Math.max(...state.finalResults.map(s => s.total), 1);
       useEffect(() => { const t = setTimeout(fireConfetti, 300); return () => clearTimeout(t); }, []);
       return (
-        <div className="animate-in">
-          <div className="winner-container">
+        <div className="animate-in" style={{ position: 'relative' }}>
+          <FloatingParticles accent="#f59e0b" />
+          <StageLights accent="rgba(245,158,11,0.2)" />
+          <div className="winner-container" style={{ position: 'relative', zIndex: 1 }}>
             <div className="winner-trophy">&#127942;</div>
             <div className="winner-label">Vinnare av Familje-Mello</div>
             <div className="winner-song">{w.title}</div>
@@ -789,13 +1202,22 @@
             <div className="winner-score-label">av max {state.voters.length * 5}</div>
           </div>
           <div className="section-title">Slutst&#228;llning</div>
-          {state.finalResults.map((s, i) => (
-            <div key={s.id} className={'result-row' + (i===0?' winner':'')} style={{ animation: 'slideReveal 0.4s ease-out '+(i*0.1)+'s both' }}>
-              <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
-              <div className="result-info"><div className="result-title">{s.title}</div>{s.artist && <div className="result-artist">{s.artist}</div>}</div>
-              <div className="result-score">{s.total}</div>
-            </div>
-          ))}
+          {state.finalResults.map((s, i) => {
+            const barPct = Math.round((s.total / maxScore) * 100);
+            return (
+              <div key={s.id} className={'result-row' + (i===0?' winner':'')} style={{ animation: 'slideReveal 0.4s ease-out '+(i*0.1)+'s both', flexWrap: 'wrap' }}>
+                <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
+                <div className="result-info">
+                  <div className="result-title">{s.title}</div>
+                  {s.artist && <div className="result-artist">{s.artist}</div>}
+                  <div className="result-bar-container">
+                    <div className="result-bar" style={{ '--bar-width': barPct + '%', background: i === 0 ? 'var(--gradient-gold)' : i < 3 ? 'var(--gradient-pink)' : 'rgba(255,255,255,0.15)', animationDelay: (i * 0.1 + 0.3) + 's' }} />
+                  </div>
+                </div>
+                <div className="result-score">{s.total}</div>
+              </div>
+            );
+          })}
           <div className="text-center mt-24" style={{ marginBottom: 40 }}>
             <button className="btn btn-primary btn-lg" onClick={fireConfetti}>&#127881; Mer konfetti!</button>
             <div style={{ marginTop: 16 }}><button className="btn btn-ghost" onClick={() => dispatch({ type: 'RESET' })}>Nytt Mello</button></div>
@@ -804,10 +1226,291 @@
       );
     }
 
+    // ==================== HOST GAME (id, resume, phone inputs) ====================
+
+    function useHostGame(state, dispatch) {
+      const [code, setCode] = useState(null);
+      const [connected, setConnected] = useState(false);
+      const [resumed, setResumed] = useState(false);
+      const channelRef = useRef(null);
+      const ballotRef = useRef(null);
+      const stateRef = useRef(state);
+      stateRef.current = state;
+
+      const ballot = getActiveBallot(state);
+      ballotRef.current = ballot;
+
+      // Decide the game id on load: resume an in-progress game from the DB if we have one,
+      // otherwise mint a fresh code.
+      useEffect(() => {
+        let alive = true;
+        (async () => {
+          let savedId = null;
+          try { savedId = localStorage.getItem('mello_host_game'); } catch (e) {}
+          if (savedId) {
+            const snap = await loadGame(savedId);
+            if (alive && snap && snap.phase && snap.phase !== 'winner') {
+              dispatch({ type: 'RESTORE', snapshot: snap });
+              setResumed(true);
+              setCode(savedId);
+              return;
+            }
+          }
+          const id = makeGameCode();
+          try { localStorage.setItem('mello_host_game', id); } catch (e) {}
+          if (alive) { setCode(id); saveGame(id, stateRef.current); }
+        })();
+        return () => { alive = false; };
+      }, []);
+
+      // Channel: receive phone inputs, answer "hello" with the current ballot.
+      useEffect(() => {
+        if (!code) return;
+        const sb = getSupabase();
+        if (!sb) return;
+        const ch = sb.channel('mello-game-' + code, { config: { broadcast: { ack: false } } });
+        ch.on('broadcast', { event: 'vote' }, ({ payload }) => {
+          if (!payload) return;
+          const { songId, voterId, stars, voteKey } = payload;
+          if (songId && voterId && voteKey && stars >= 1 && stars <= 5) {
+            dispatch({ type: 'SET_VOTE', songId, voterId, stars: Math.round(stars), voteKey });
+          }
+        });
+        ch.on('broadcast', { event: 'register' }, ({ payload }) => {
+          if (payload && payload.id && payload.name) dispatch({ type: 'ADD_VOTER', id: payload.id, name: String(payload.name).slice(0, 24) });
+        });
+        ch.on('broadcast', { event: 'unregister' }, ({ payload }) => {
+          if (payload && payload.id) dispatch({ type: 'REMOVE_VOTER', id: payload.id });
+        });
+        ch.on('broadcast', { event: 'hello' }, () => {
+          if (channelRef.current && ballotRef.current) channelRef.current.send({ type: 'broadcast', event: 'ballot', payload: ballotRef.current });
+        });
+        ch.subscribe((s) => setConnected(s === 'SUBSCRIBED'));
+        channelRef.current = ch;
+        return () => { try { sb.removeChannel(ch); } catch (e) {} channelRef.current = null; };
+      }, [code, dispatch]);
+
+      // Re-broadcast the ballot whenever it changes (new song, phase, or vote tally).
+      const ballotJson = JSON.stringify(ballot);
+      useEffect(() => {
+        if (channelRef.current && connected) channelRef.current.send({ type: 'broadcast', event: 'ballot', payload: ballot });
+      }, [ballotJson, connected]);
+
+      // Persist a snapshot (debounced) so an aborted game can be resumed.
+      const stateJson = JSON.stringify(state);
+      useEffect(() => {
+        if (!code) return;
+        const t = setTimeout(() => saveGame(code, stateRef.current), 800);
+        return () => clearTimeout(t);
+      }, [stateJson, code]);
+
+      const newGame = () => {
+        const id = makeGameCode();
+        try { localStorage.setItem('mello_host_game', id); } catch (e) {}
+        dispatch({ type: 'RESET' });
+        setResumed(false);
+        setCode(id);
+        saveGame(id, initialState);
+      };
+
+      return { code, connected, resumed, newGame };
+    }
+
+    function VotePanel({ code, connected }) {
+      const [qr, setQr] = useState(null);
+      const [open, setOpen] = useState(true);
+      const base = (window.location.origin || '') + window.location.pathname;
+      const url = base + '?game=' + code;
+      useEffect(() => {
+        try {
+          if (window.qrcode) {
+            const qr = window.qrcode(0, 'M');
+            qr.addData(url);
+            qr.make();
+            setQr(qr.createDataURL(6, 12));
+          }
+        } catch (e) { /* QR is a convenience; the room code still works */ }
+      }, [url]);
+      if (!code) return null;
+      return (
+        <div className="card vote-panel">
+          <div className="flex-between" style={{ cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
+            <div className="card-title" style={{ marginBottom: 0 }}>
+              &#128241; R&#246;sta i mobilen
+              <span className={'live-dot' + (connected ? ' on' : '')} title={connected ? 'Live' : 'Ansluter…'} />
+            </div>
+            <span style={{ color: 'var(--text-muted)' }}>{open ? '▲' : '▼'}</span>
+          </div>
+          {open && (
+            <div className="vote-panel-body">
+              {qr && <div className="vote-panel-qr"><img src={qr} alt="QR-kod" /></div>}
+              <div className="vote-panel-info">
+                <div className="vote-panel-hint">Skanna koden eller g&#229; till</div>
+                <div className="vote-panel-url">{url.replace(/^https?:\/\//, '')}</div>
+                <div className="vote-panel-hint" style={{ marginTop: 12 }}>Spelkod</div>
+                <div className="room-code">{code}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ==================== PHONE VOTING VIEW ====================
+
+    function PhoneStars({ value, onChange }) {
+      return (
+        <div className="phone-stars">
+          {[1,2,3,4,5].map(n => (
+            <span key={n} className={'star' + (n <= value ? ' active' : '')} onClick={() => onChange(n)}>&#11088;</span>
+          ))}
+        </div>
+      );
+    }
+
+    function PhoneVoterManager({ parts, name, setName, addPart, removePart, compact }) {
+      // Always show the add field when this phone has no voters yet, even mid-game.
+      const [open, setOpen] = useState(!compact || parts.length === 0);
+      if (compact && !open) {
+        return (
+          <div className="text-center" style={{ marginTop: 16 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}>&#128100; R&#246;stare p&#229; den h&#228;r telefonen ({parts.length})</button>
+          </div>
+        );
+      }
+      return (
+        <div className="phone-card" style={{ marginTop: 14, textAlign: 'left' }}>
+          <div className="flex-between" style={{ marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>R&#246;stare p&#229; den h&#228;r telefonen</div>
+            {compact && <span style={{ color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setOpen(false)}>&#9650;</span>}
+          </div>
+          {parts.length === 0 && <div className="phone-msg" style={{ marginBottom: 10 }}>L&#228;gg till alla som r&#246;star h&#228;rifr&#229;n &#8212; en eller flera.</div>}
+          {parts.map(p => (
+            <div key={p.id} className="voter-row">
+              <div className="voter-name">{p.name}</div>
+              <button className="btn btn-ghost btn-sm" onClick={() => removePart(p.id)}>Ta bort</button>
+            </div>
+          ))}
+          <div className="input-row" style={{ marginTop: 12, marginBottom: 0 }}>
+            <input className="input" placeholder="Namn" value={name} maxLength={24} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addPart(); }} />
+            <button className="btn btn-primary btn-sm" onClick={addPart}>+ L&#228;gg till</button>
+          </div>
+        </div>
+      );
+    }
+
+    function PhoneGame({ code }) {
+      const [ballot, setBallot] = useState(null);
+      const [status, setStatus] = useState('connecting'); // connecting | live | error
+      const [parts, setParts] = useState(() => { try { return JSON.parse(localStorage.getItem('mello_parts_' + code) || '[]'); } catch (e) { return []; } });
+      const [name, setName] = useState('');
+      const [pending, setPending] = useState({}); // `${songId}:${partId}` -> stars
+      const channelRef = useRef(null);
+      const partsRef = useRef(parts);
+      partsRef.current = parts;
+
+      const persistParts = (next) => { setParts(next); try { localStorage.setItem('mello_parts_' + code, JSON.stringify(next)); } catch (e) {} };
+
+      useEffect(() => {
+        const sb = getSupabase();
+        if (!sb) { setStatus('error'); return; }
+        const ch = sb.channel('mello-game-' + code, { config: { broadcast: { ack: false } } });
+        ch.on('broadcast', { event: 'ballot' }, ({ payload }) => { if (payload) setBallot(payload); });
+        ch.subscribe((s) => {
+          if (s === 'SUBSCRIBED') {
+            setStatus('live');
+            ch.send({ type: 'broadcast', event: 'hello', payload: {} });
+            // Re-announce our voters so a freshly (re)started host learns them.
+            partsRef.current.forEach(p => ch.send({ type: 'broadcast', event: 'register', payload: { id: p.id, name: p.name } }));
+          } else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('error');
+        });
+        channelRef.current = ch;
+        return () => { try { sb.removeChannel(ch); } catch (e) {} };
+      }, [code]);
+
+      const addPart = () => {
+        const n = name.trim(); if (!n) return;
+        const p = { id: genId('p_'), name: n.slice(0, 24) };
+        persistParts([...partsRef.current, p]);
+        setName('');
+        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'register', payload: { id: p.id, name: p.name } });
+      };
+      const removePart = (id) => {
+        persistParts(partsRef.current.filter(p => p.id !== id));
+        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'unregister', payload: { id } });
+      };
+
+      const starsFor = (partId) => {
+        if (!ballot || !ballot.active) return 0;
+        const k = ballot.songId + ':' + partId;
+        if (pending[k] != null) return pending[k];
+        return (ballot.votes && ballot.votes[partId]) || 0;
+      };
+      const sendVote = (partId, stars) => {
+        if (!ballot || !ballot.active) return;
+        const k = ballot.songId + ':' + partId;
+        setPending(p => ({ ...p, [k]: stars }));
+        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'vote', payload: { voterId: partId, songId: ballot.songId, stars, voteKey: ballot.voteKey } });
+      };
+
+      const mgrProps = { parts, name, setName, addPart, removePart };
+
+      let content;
+      if (status === 'error') {
+        content = <div className="phone-card"><div className="phone-msg">Kunde inte ansluta. Kontrollera n&#228;tet och ladda om sidan.</div></div>;
+      } else if (ballot && ballot.active) {
+        content = (
+          <div>
+            <div className="phone-card">
+              <div className="phone-eyebrow">{ballot.label} &#183; L&#229;t {ballot.songIndex + 1} av {ballot.songCount}</div>
+              <div className="phone-song-title">{ballot.title}</div>
+              {ballot.artist && <div className="phone-song-artist">{ballot.artist}</div>}
+              {parts.length === 0
+                ? <div className="phone-msg" style={{ marginTop: 16 }}>L&#228;gg till ditt namn nedan f&#246;r att kunna r&#246;sta.</div>
+                : parts.map(p => {
+                    const s = starsFor(p.id);
+                    return (
+                      <div key={p.id} className="phone-vote-row">
+                        <div className="phone-vote-name">{p.name}{s > 0 && <span className="phone-vote-check"> &#10003;</span>}</div>
+                        <PhoneStars value={s} onChange={(v) => sendVote(p.id, v)} />
+                      </div>
+                    );
+                  })}
+            </div>
+            <PhoneVoterManager {...mgrProps} compact />
+          </div>
+        );
+      } else {
+        let msg = 'V&#228;nta p&#229; n&#228;sta l&#229;t…';
+        if (!ballot) msg = 'Ansluter till spelet…';
+        else if (ballot.phase === 'setup') msg = parts.length ? 'Du &#228;r med! V&#228;ntar p&#229; att spelet ska b&#246;rja…' : 'L&#228;gg till ditt namn nedan s&#229; &#228;r du med!';
+        else if (ballot.phase === 'winner') msg = 'Spelet &#228;r slut &#8212; tack f&#246;r att du r&#246;stade! 🏆';
+        else if (ballot.phase === 'groupRecap' || ballot.phase === 'recap') msg = 'Recap p&#229;g&#229;r &#8212; titta p&#229; stora sk&#228;rmen! 👀';
+        else if (ballot.phase === 'groupResults') msg = 'Dags f&#246;r po&#228;ng &#8212; titta p&#229; stora sk&#228;rmen!';
+        content = (
+          <div>
+            <div className="phone-card"><div className="phone-msg">{msg}</div></div>
+            <PhoneVoterManager {...mgrProps} />
+          </div>
+        );
+      }
+
+      return (
+        <div className="phone-wrap">
+          <div className="phone-header">
+            <div className="logo" style={{ fontSize: '1.7rem' }}>Familje-Mello</div>
+            <div className="phone-sub">Spel {code} <span className={'live-dot' + (status === 'live' ? ' on' : '')} /></div>
+          </div>
+          {content}
+        </div>
+      );
+    }
+
     // ==================== APP ====================
 
     function App() {
       const [state, dispatch] = useReducer(reducer, initialState);
+      const room = useHostGame(state, dispatch);
       return (
         <div className="container">
           <div className="header">
@@ -816,17 +1519,21 @@
           </div>
           {state.phase !== 'setup' && <PhaseIndicator phase={state.phase} groupCount={state.groupCount} currentGroup={state.currentGroup} />}
           <div style={{ flex: 1, paddingBottom: 20 }}>
-            {state.phase === 'setup' && <SetupScreen state={state} dispatch={dispatch} />}
-            {state.phase === 'group' && (
-              <SongStageScreen key={'g'+state.currentGroup} state={state} dispatch={dispatch}
+            {state.phase === 'setup' && <SetupScreen state={state} dispatch={dispatch} room={room} />}
+            {state.phase === 'groupIntro' && <GroupIntroScreen state={state} dispatch={dispatch} />}
+            {state.phase === 'group' && (() => {
+              const theme = getGroupTheme(state.currentGroup);
+              return <SongStageScreen key={'g'+state.currentGroup} state={state} dispatch={dispatch}
                 songs={state.songs.filter(s => s.group === state.currentGroup)}
                 voteKey={'group_'+state.currentGroup}
-                groupLabel={'Delt\u00e4vling '+(state.currentGroup+1)+' av '+state.groupCount}
+                groupLabel={theme.emoji + ' ' + theme.name + ' \u2014 Delt\u00e4vling '+(state.currentGroup+1)}
                 groupSub="Titta och r&#246;sta p&#229; en l&#229;t i taget"
                 onFinish={() => dispatch({ type: 'FINISH_GROUP' })}
                 finishLabel="&#128202; Visa resultat!"
-              />
-            )}
+                accent={theme.accent} accentRgb={theme.accentRgb}
+                room={room}
+              />;
+            })()}
             {state.phase === 'groupRecap' && <GroupRecapScreen state={state} dispatch={dispatch} />}
             {state.phase === 'groupResults' && <GroupResultsScreen state={state} dispatch={dispatch} />}
             {state.phase === 'recap' && <RecapScreen state={state} dispatch={dispatch} />}
@@ -837,6 +1544,8 @@
                 groupSub={state.finalists.length + ' finalister \u2014 r&#246;sta en sista g&#229;ng!'}
                 onFinish={() => dispatch({ type: 'FINISH_FINAL' })}
                 finishLabel="&#127942; Visa vinnaren!"
+                accent="#f59e0b" accentRgb="245,158,11"
+                room={room}
               />
             )}
             {state.phase === 'winner' && <WinnerScreen state={state} dispatch={dispatch} />}
@@ -845,7 +1554,8 @@
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    const _game = getGameParam();
+    ReactDOM.createRoot(document.getElementById('root')).render(_game ? <PhoneGame code={_game} /> : <App />);
   </script>
 </body>
 </html>
