@@ -1481,12 +1481,12 @@
           </div>
         );
       } else {
-        let msg = 'V&#228;nta p&#229; n&#228;sta l&#229;t…';
+        let msg = 'Vänta på nästa låt…';
         if (!ballot) msg = 'Ansluter till spelet…';
-        else if (ballot.phase === 'setup') msg = parts.length ? 'Du &#228;r med! V&#228;ntar p&#229; att spelet ska b&#246;rja…' : 'L&#228;gg till ditt namn nedan s&#229; &#228;r du med!';
-        else if (ballot.phase === 'winner') msg = 'Spelet &#228;r slut &#8212; tack f&#246;r att du r&#246;stade! 🏆';
-        else if (ballot.phase === 'groupRecap' || ballot.phase === 'recap') msg = 'Recap p&#229;g&#229;r &#8212; titta p&#229; stora sk&#228;rmen! 👀';
-        else if (ballot.phase === 'groupResults') msg = 'Dags f&#246;r po&#228;ng &#8212; titta p&#229; stora sk&#228;rmen!';
+        else if (ballot.phase === 'setup') msg = parts.length ? 'Du är med! Väntar på att spelet ska börja…' : 'Lägg till ditt namn nedan så är du med!';
+        else if (ballot.phase === 'winner') msg = 'Spelet är slut — tack för att du röstade! 🏆';
+        else if (ballot.phase === 'groupRecap' || ballot.phase === 'recap') msg = 'Recap pågår — titta på stora skärmen! 👀';
+        else if (ballot.phase === 'groupResults') msg = 'Dags för poäng — titta på stora skärmen!';
         content = (
           <div>
             <div className="phone-card"><div className="phone-msg">{msg}</div></div>
@@ -1541,7 +1541,7 @@
               <SongStageScreen key="final" state={state} dispatch={dispatch}
                 songs={state.finalists} voteKey="final"
                 groupLabel="&#11088; FINALEN &#11088;"
-                groupSub={state.finalists.length + ' finalister \u2014 r&#246;sta en sista g&#229;ng!'}
+                groupSub={state.finalists.length + ' finalister \u2014 r\u00f6sta en sista g\u00e5ng!'}
                 onFinish={() => dispatch({ type: 'FINISH_FINAL' })}
                 finishLabel="&#127942; Visa vinnaren!"
                 accent="#f59e0b" accentRgb="245,158,11"
