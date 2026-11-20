@@ -6,7 +6,7 @@ import { seeded } from './helpers.mjs';
 const VOTERS = ['Mamma', 'Pappa', 'Saga'];
 
 function setup(nSongs = 16, opts = {}) {
-  let s = reducer(initialState, { type: 'LOAD_DEMO' });
+  let s = reducer(initialState, { type: 'LOAD_PLAYLIST', id: 'klassiker' });
   s = { ...s, songs: s.songs.slice(0, nSongs) };
   VOTERS.forEach((name, i) => { s = reducer(s, { type: 'ADD_VOTER', id: 'v' + i, name }); });
   if (opts.finalMode) s = reducer(s, { type: 'SET_SETTING', key: 'finalMode', value: opts.finalMode });

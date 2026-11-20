@@ -13,6 +13,7 @@ import {
   openGameChannel, saveGame, saveLocalSnapshot, setHostCode,
 } from './net.js';
 import * as sfx from './sfx.js';
+import { PLAYLISTS } from './playlists.js';
 import { YouTubePlayer } from './youtube.jsx';
 import {
   fireConfetti, fireMiniConfetti, FloatingParticles, StageLights, StarsText, Thumb, useKeys, VoteInput,
@@ -29,6 +30,16 @@ function Heading({ emoji, after, children }) {
       {emoji && <span className="gl-emoji">{emoji}</span>}
       <span className="gl-text">{children}</span>
       {after && <span className="gl-emoji after">{after}</span>}
+    </div>
+  );
+}
+
+function FactsCard({ facts }) {
+  if (!facts || !facts.length) return null;
+  return (
+    <div className="card facts-card">
+      <div className="facts-title">💡 Visste du?</div>
+      <ul className="facts-list">{facts.map((f, i) => <li key={i}>{f}</li>)}</ul>
     </div>
   );
 }
@@ -256,6 +267,7 @@ function SetupScreen({ state, dispatch, room }) {
   const [artist, setArtist] = useState('');
   const [picker, setPicker] = useState('');
   const [highlight, setHighlight] = useState('');
+  const [fact, setFact] = useState('');
   const [lookup, setLookup] = useState(null); // { status: loading|ok|blocked|missing|offline|unknown, raw }
   const [error, setError] = useState('');
   const [voterName, setVoterName] = useState('');
@@ -289,7 +301,7 @@ function SetupScreen({ state, dispatch, room }) {
   }, [videoId]);
 
   const resetSongForm = () => {
-    setUrl(''); setTitle(''); setArtist(''); setHighlight(''); setError(''); setLookup(null);
+    setUrl(''); setTitle(''); setArtist(''); setHighlight(''); setFact(''); setError(''); setLookup(null);
     touched.current = { title: false, artist: false, highlight: false };
   };
   const addSong = () => {
@@ -298,7 +310,7 @@ function SetupScreen({ state, dispatch, room }) {
     if (lookup && lookup.status === 'missing') return setError('Hittar ingen video med den länken.');
     if (state.songs.some((s) => s.youtubeId === videoId)) return setError('Den låten är redan med.');
     if (!title.trim()) return setError('Skriv låtens titel.');
-    dispatch({ type: 'ADD_SONG', song: { title: title.trim(), artist: artist.trim(), youtubeId: videoId, highlightStart: parseTimestamp(highlight), pickedBy: picker.trim() } });
+    dispatch({ type: 'ADD_SONG', song: { title: title.trim(), artist: artist.trim(), youtubeId: videoId, highlightStart: parseTimestamp(highlight), pickedBy: picker.trim(), facts: fact.trim() ? [fact.trim()] : [] } });
     resetSongForm(); // keep "vald av", people usually add several songs in a row
   };
   const addVoter = () => {
@@ -335,9 +347,17 @@ function SetupScreen({ state, dispatch, room }) {
       <VotePanel code={room.code} connected={room.connected} phoneCount={phoneCount} />
 
       {n === 0 && (
-        <div className="demo-banner">
-          <p>Vill ni testköra? Ladda 16 klassiker med häftiga musikvideor (1975 till 2014).</p>
-          <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'LOAD_DEMO' })}>🎵 Ladda demolåtar</button>
+        <div className="playlist-banner">
+          <div className="muted small" style={{ marginBottom: 10 }}>Färdiga listor att börja med (eller lägg till egna låtar nedan)</div>
+          <div className="playlist-options">
+            {PLAYLISTS.map((p, i) => (
+              <button key={p.id} className={'playlist-option' + (i === 0 ? ' primary' : '')} onClick={() => dispatch({ type: 'LOAD_PLAYLIST', id: p.id })}>
+                <span className="pl-emoji">{p.emoji}</span>
+                <span className="pl-name">{p.name}</span>
+                <span className="pl-blurb">{p.blurb}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -355,6 +375,9 @@ function SetupScreen({ state, dispatch, room }) {
           <input className="input" list="mello-pickers" placeholder="Vem valde låten? (valfritt)" value={picker} onChange={(e) => setPicker(e.target.value)} onKeyDown={onEnter(addSong)} />
           <input className="input" placeholder="Bästa stället, t.ex. 1:05 (valfritt)" value={highlight} onChange={(e) => { touched.current.highlight = true; setHighlight(e.target.value); }} onKeyDown={onEnter(addSong)} />
           <button className="btn btn-primary btn-sm" onClick={addSong}>+ Lägg till</button>
+        </div>
+        <div className="input-row">
+          <input className="input" placeholder="Kul fakta om låten, visas som &quot;Visste du?&quot; (valfritt)" value={fact} maxLength={200} onChange={(e) => setFact(e.target.value)} onKeyDown={onEnter(addSong)} />
         </div>
         <datalist id="mello-pickers">{pickerNames.map((p) => <option key={p} value={p} />)}</datalist>
         <div className="muted small">Tips: dela länken från YouTube med "Starta vid" så blir det bästa stället highlight i recapen.</div>
@@ -377,6 +400,7 @@ function SetupScreen({ state, dispatch, room }) {
                     {song.pickedBy ? 'Vald av ' + song.pickedBy : ''}
                     {song.pickedBy && song.highlightStart != null ? ' · ' : ''}
                     {song.highlightStart != null ? 'Highlight ' + formatTimestamp(song.highlightStart) : ''}
+                    {song.facts && song.facts.length ? ' · 💡 ' + song.facts.length + ' fakta' : ''}
                   </div>
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'REMOVE_SONG', id: song.id })} aria-label={'Ta bort ' + song.title}>✕</button>
@@ -498,7 +522,7 @@ function IntroScreen({ state, dispatch }) {
                 <div className="intro-song-num" style={{ background: 'rgba(' + theme.accentRgb + ',0.2)', color: theme.accent }}>{i + 1}</div>
                 <div className="intro-song-info">
                   <div className="intro-song-title">{s.title}</div>
-                  <div className="intro-song-artist">{s.artist}{s.pickedBy ? ' · vald av ' + s.pickedBy : ''}</div>
+                  <div className="intro-song-artist">{s.artist}{s.year ? ' (' + s.year + ')' : ''}{s.pickedBy ? ' · vald av ' + s.pickedBy : ''}</div>
                 </div>
               </div>
             );
@@ -565,9 +589,10 @@ function SongStage({ state, dispatch, room }) {
       <div className="now-playing">
         <div className="now-playing-count">Låt {ci + 1} av {ids.length}</div>
         <div className="now-playing-song">{cur.title}</div>
-        <div className="now-playing-artist">{cur.artist}{cur.pickedBy ? ' · vald av ' + cur.pickedBy : ''}</div>
+        <div className="now-playing-artist">{cur.artist}{cur.year ? ' · ' + cur.year : ''}{cur.pickedBy ? ' · vald av ' + cur.pickedBy : ''}</div>
       </div>
       <YouTubePlayer key={cur.id} videoId={cur.youtubeId} start={clipMode ? hs : 0} end={clipMode ? hs + FINAL_SHORT_CLIP_SEC : 0} autoplay={!songDone(cur.id)} />
+      <FactsCard facts={cur.facts} />
       <div className="card">
         <div className="card-title">Rösta på den här låten</div>
         {state.voters.map((v) => {
@@ -657,6 +682,7 @@ function RecapScreen({ state, dispatch }) {
             <div className="recap-number">{final ? 'Finalist' : 'Låt'} {index + 1} av {ids.length}</div>
             <div className="recap-song-title">{song.title}</div>
             <div className="recap-song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}{song.pickedBy ? ' · vald av ' + song.pickedBy : ''}</div>
+            {song.facts && song.facts.length > 0 && <div className="recap-fact">💡 {song.facts[index % song.facts.length]}</div>}
             {playing && <div className="recap-progress"><div className="recap-progress-bar" style={{ width: progress * 100 + '%' }} /></div>}
           </div>
         </div>

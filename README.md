@@ -10,13 +10,16 @@ TV or on your phones), and reveal the points one voter at a time like the real s
 
 ## How a game goes
 
-1. **Setup.** Paste YouTube links: title and artist fill in by themselves, and videos
+1. **Setup.** Start from a ready-made list (*Musikvideokvällen*: 16 classic music
+   videos with "Visste du?" trivia for every song, or *Fler klassiker*), or paste
+   YouTube links: title and artist fill in by themselves, and videos
    that refuse to play outside YouTube are caught here, not mid-show. Note who picked
-   each song. Add voters on the TV, or let everyone scan the QR code and join on their
+   each song, and add your own "Visste du?" fact if you like. Add voters on the TV, or let everyone scan the QR code and join on their
    phone. Any voter can use *kid mode*: three big faces 😍 🙂 😴 instead of stars.
 2. **Group rounds (deltävlingar).** Songs are dealt into 2 to 4 groups of at least 3,
    spreading each person's picks over different groups. Watch one song at a time; the
-   next video starts by itself. Everyone gives 1 to 5 stars, and the stars stay secret.
+   next video starts by itself, with its "Visste du?" facts under the video and on the
+   phones. Everyone gives 1 to 5 stars, and the stars stay secret.
 3. **Recap.** Highlight clips of the round, timed by real playback (ads or buffering no
    longer eat the clip).
 4. **Tiebreak.** Each voter's stars become their personal ranking. Gave two songs five
@@ -67,7 +70,8 @@ familje-mello/
 │   ├── youtube.jsx   ← YouTube player (autoplay, clip timing, errors)
 │   ├── net.js        ← Supabase, local storage, YouTube lookups
 │   ├── sfx.js        ← sound effects, synthesised (no audio files)
-│   ├── ui.jsx, demo.js, main.jsx, style.css, index.html (template)
+│   ├── playlists.js  ← ready-made lists with highlight times and trivia
+│   ├── ui.jsx, main.jsx, style.css, index.html (template)
 ├── test/             ← node --test
 ├── supabase/schema.sql  ← the save table and its two functions
 └── docs/             ← the original concept notes (March 2026)

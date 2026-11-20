@@ -146,7 +146,7 @@ export function PhoneGame({ code }) {
         <div className="phone-eyebrow">{ballot.label} · Låt {ballot.songIndex + 1} av {ballot.songCount}</div>
         <Thumb videoId={s.youtubeId} className="phone-thumb" alt={s.title} />
         <div className="phone-song-title">{s.title}</div>
-        {s.artist && <div className="phone-song-artist">{s.artist}</div>}
+        {s.artist && <div className="phone-song-artist">{s.artist}{s.year ? ' · ' + s.year : ''}</div>}
         {s.pickedBy && <div className="phone-picker">Vald av {s.pickedBy}</div>}
         {parts.length === 0
           ? <div className="phone-msg" style={{ marginTop: 16 }}>Skriv ditt namn nedan för att rösta.</div>
@@ -166,6 +166,12 @@ export function PhoneGame({ code }) {
               </div>
             );
           })}
+        {s.facts && s.facts.length > 0 && (
+          <div className="phone-facts">
+            <div className="facts-title">💡 Visste du?</div>
+            {s.facts.map((f, i) => <p key={i}>{f}</p>)}
+          </div>
+        )}
       </div>
     );
   } else if (ballot.kind === 'tiebreak') {

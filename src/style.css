@@ -406,3 +406,22 @@ a { color: inherit; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   .particles, .stage-lights { display: none; }
 }
+
+/* ===== Playlists and "Visste du?" ===== */
+.playlist-banner { margin-bottom: 16px; }
+.playlist-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.playlist-option { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; row-gap: 2px; align-items: center; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px dashed rgba(59,130,246,0.35); background: rgba(59,130,246,0.08); cursor: pointer; transition: transform 0.15s, background 0.15s; }
+.playlist-option:hover { transform: translateY(-2px); background: rgba(59,130,246,0.14); }
+.playlist-option.primary { border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); }
+.pl-emoji { grid-row: 1 / span 2; font-size: 2rem; }
+.pl-name { font-weight: 800; font-size: 1.05rem; }
+.pl-blurb { font-size: 0.82rem; color: var(--text-muted); }
+.facts-card { border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
+.facts-title { font-weight: 800; color: var(--gold-light); margin-bottom: 8px; }
+.facts-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.facts-list li { position: relative; padding-left: 18px; line-height: 1.45; font-size: 1.02rem; }
+.facts-list li::before { content: '★'; position: absolute; left: 0; color: var(--gold); font-size: 0.8rem; top: 3px; }
+.recap-fact { margin-top: 10px; color: var(--gold-light); font-size: 0.95rem; line-height: 1.4; }
+.phone-facts { margin-top: 16px; padding: 14px; border-radius: 14px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); text-align: left; }
+.phone-facts p { font-size: 0.95rem; line-height: 1.45; margin-top: 8px; }
+.phone-facts p:first-of-type { margin-top: 0; }

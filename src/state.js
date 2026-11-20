@@ -4,7 +4,7 @@ import {
   assignGroups, buildRevealBeats, FINAL_THEME, genId, getGroupTheme, hasVotedAll,
   pendingTiebreaks, qualifiersOf, randomFillPicks, scoreRound, shuffle, starsOf,
 } from './logic.js';
-import { DEMO_SONGS } from './demo.js';
+import { getPlaylist } from './playlists.js';
 
 export const SNAPSHOT_VERSION = 2;
 
@@ -117,8 +117,11 @@ export function reducer(state, action) {
       return { ...state, songs: state.songs.map((s) => (s.id === action.id ? { ...s, ...action.patch } : s)) };
     case 'REMOVE_SONG':
       return { ...state, songs: state.songs.filter((s) => s.id !== action.id) };
-    case 'LOAD_DEMO':
-      return { ...state, songs: DEMO_SONGS.map((s, i) => ({ ...s, id: 'demo' + i, group: -1 })) };
+    case 'LOAD_PLAYLIST': {
+      const list = getPlaylist(action.id);
+      if (!list) return state;
+      return { ...state, songs: list.songs.map((s, i) => ({ ...s, facts: s.facts ? [...s.facts] : [], id: list.id + i, group: -1 })) };
+    }
     case 'CLEAR_SONGS':
       return { ...state, songs: [] };
 
@@ -257,7 +260,7 @@ export function getActiveBallot(state) {
   const songs = songMap(state);
   const info = (id) => {
     const s = songs[id] || {};
-    return { id, title: s.title || '', artist: s.artist || '', youtubeId: s.youtubeId || '', pickedBy: s.pickedBy || '' };
+    return { id, title: s.title || '', artist: s.artist || '', year: s.year || '', youtubeId: s.youtubeId || '', pickedBy: s.pickedBy || '' };
   };
 
   if (state.phase === 'group' || state.phase === 'final') {
@@ -266,7 +269,8 @@ export function getActiveBallot(state) {
       const idx = Math.min(state.currentSongIndex, ids.length - 1);
       const votes = {};
       for (const id of ids) votes[id] = { ...((state.votes[state.round] || {})[id] || {}) };
-      return { ...base, kind: 'vote', song: info(ids[idx]), songIndex: idx, songCount: ids.length, songIds: ids, votes };
+      const song = { ...info(ids[idx]), facts: (songs[ids[idx]] || {}).facts || [] };
+      return { ...base, kind: 'vote', song, songIndex: idx, songCount: ids.length, songIds: ids, votes };
     }
   }
   if (state.phase === 'tiebreak') {
