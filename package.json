@@ -1,0 +1,14 @@
+{
+  "name": "familjemello",
+  "private": true,
+  "type": "module",
+  "description": "Familje-Mello: the family's own song contest. src/ is built into the single index.html that GitHub Pages serves.",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

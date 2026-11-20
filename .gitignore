@@ -1,8 +1,11 @@
-# Secrets — never commit
+# Secrets: never commit
 supabase keys.rtf
 *.rtf
 .env
 .env.*
+
+# Build tooling
+node_modules/
 
 # macOS
 .DS_Store

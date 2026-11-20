@@ -2,1560 +2,435 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e1044" />
   <title>Familje-Mello</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A4%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://i.ytimg.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg-dark: #0f0a2e;
-      --bg-card: rgba(255,255,255,0.07);
-      --bg-card-hover: rgba(255,255,255,0.12);
-      --purple: #7c3aed;
-      --pink: #ec4899;
-      --blue: #3b82f6;
-      --gold: #f59e0b;
-      --gold-light: #fbbf24;
-      --green: #10b981;
-      --red: #ef4444;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --gradient-main: linear-gradient(135deg, #1e1044 0%, #2d1b69 30%, #1a0a3e 60%, #0f0a2e 100%);
-      --gradient-pink: linear-gradient(135deg, #ec4899, #a855f7);
-      --gradient-gold: linear-gradient(135deg, #f59e0b, #fbbf24);
-      --gradient-blue: linear-gradient(135deg, #3b82f6, #7c3aed);
-    }
+:root {
+  --bg-dark: #0f0a2e;
+  --bg-card: rgba(255,255,255,0.07);
+  --bg-card-hover: rgba(255,255,255,0.11);
+  --line: rgba(255,255,255,0.09);
+  --purple: #7c3aed;
+  --pink: #ec4899;
+  --blue: #3b82f6;
+  --gold: #f59e0b;
+  --gold-light: #fbbf24;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #f1f5f9;
+  --text-muted: #a3b0c2;
+  --gradient-main: linear-gradient(135deg, #1e1044 0%, #2d1b69 30%, #1a0a3e 60%, #0f0a2e 100%);
+  --gradient-pink: linear-gradient(135deg, #ec4899, #a855f7);
+  --gradient-gold: linear-gradient(135deg, #f59e0b, #fbbf24);
+  --gradient-blue: linear-gradient(135deg, #3b82f6, #7c3aed);
+  --row: 66px;
+}
 
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--gradient-main);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: #1a0a3e var(--gradient-main) fixed;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* Slow ambient glow. Transform-only, so it stays on the GPU. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -25%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(236,72,153,0.1) 0%, transparent 50%);
+  animation: ambientShift 24s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+@keyframes ambientShift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2%, -2%); } }
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%; left: -50%;
-      width: 200%; height: 200%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.15) 0%, transparent 50%),
-                  radial-gradient(ellipse at 70% 80%, rgba(236,72,153,0.1) 0%, transparent 50%),
-                  radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.08) 0%, transparent 50%);
-      animation: ambientShift 20s ease-in-out infinite;
-      z-index: 0; pointer-events: none;
-    }
+button { font-family: inherit; color: inherit; }
+a { color: inherit; }
+#root { position: relative; z-index: 1; }
 
-    @keyframes ambientShift {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(2%, -2%) rotate(1deg); }
-      66% { transform: translate(-1%, 1%) rotate(-1deg); }
-    }
+.container { max-width: 980px; margin: 0 auto; padding: 16px 20px; min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; padding-bottom: 24px; }
+.header { position: relative; text-align: center; padding: 18px 0 6px; }
+.logo {
+  font-size: 2.6rem; font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--gold), var(--pink), var(--purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.logo-sub { font-size: 0.95rem; color: var(--text-muted); margin-top: 2px; }
+.header-tools { position: absolute; top: 14px; right: 0; display: flex; gap: 6px; }
+.icon-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-card); cursor: pointer; font-size: 1.05rem; }
+.icon-btn:hover { background: var(--bg-card-hover); }
 
-    #root { position: relative; z-index: 1; }
+.toast {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 50;
+  background: rgba(16,185,129,0.95); color: #04261b; font-weight: 700; padding: 12px 20px; border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35); cursor: pointer; animation: fadeInUp 0.3s ease-out; max-width: calc(100% - 32px);
+}
 
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
-    .header { text-align: center; padding: 24px 0 10px; }
+.phase-indicator { display: flex; justify-content: center; gap: 8px; margin: 14px 0 24px; flex-wrap: wrap; }
+.phase-dot { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: var(--bg-card); color: var(--text-muted); }
+.phase-dot.active { background: var(--gradient-pink); color: white; }
+.phase-dot.completed { background: rgba(16,185,129,0.18); color: var(--green); }
 
-    .logo {
-      font-size: 2.8rem; font-weight: 900;
-      background: linear-gradient(135deg, var(--gold), var(--pink), var(--purple));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      letter-spacing: -1px;
-    }
-    .logo-sub { font-size: 0.95rem; color: var(--text-muted); margin-top: 4px; }
+.card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 16px; }
+.card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; }
+.section-title { font-size: 1.3rem; font-weight: 700; margin: 8px 0 14px; }
 
-    .phase-indicator { display: flex; justify-content: center; gap: 8px; margin: 18px 0 28px; flex-wrap: wrap; }
-    .phase-dot { padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: var(--bg-card); color: var(--text-muted); transition: all 0.3s; }
-    .phase-dot.active { background: var(--gradient-pink); color: white; box-shadow: 0 0 20px rgba(236,72,153,0.3); }
-    .phase-dot.completed { background: rgba(16,185,129,0.2); color: var(--green); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 26px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: transform 0.15s, background 0.15s; text-decoration: none; }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: var(--gradient-pink); color: white; box-shadow: 0 4px 18px rgba(236,72,153,0.3); }
+.btn-gold { background: var(--gradient-gold); color: #1a0a3e; box-shadow: 0 4px 18px rgba(245,158,11,0.3); }
+.btn-blue { background: var(--gradient-blue); color: white; box-shadow: 0 4px 18px rgba(59,130,246,0.3); }
+.btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid rgba(255,255,255,0.12); }
+.btn-sm { padding: 8px 14px; font-size: 0.85rem; }
+.btn-lg { padding: 16px 38px; font-size: 1.2rem; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+.link-btn { background: none; border: none; color: var(--text-muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 4px; }
+.link-btn:hover { color: var(--text); }
 
-    .card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 16px; backdrop-filter: blur(10px); transition: all 0.2s; }
-    .card:hover { background: var(--bg-card-hover); }
-    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+.input { width: 100%; padding: 12px 14px; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--text); font-family: inherit; font-size: 1rem; outline: none; }
+.input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,58,237,0.25); }
+.input::placeholder { color: var(--text-muted); }
+.input-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.input-row .input { flex: 1; }
+.code-input { max-width: 140px; text-align: center; letter-spacing: 6px; font-weight: 800; text-transform: uppercase; }
+.lookup-line { font-size: 0.85rem; margin: -2px 0 10px; }
 
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .btn:hover { transform: translateY(-2px); }
-    .btn:active { transform: translateY(0); }
-    .btn-primary { background: var(--gradient-pink); color: white; box-shadow: 0 4px 20px rgba(236,72,153,0.3); }
-    .btn-gold { background: var(--gradient-gold); color: #1a0a3e; box-shadow: 0 4px 20px rgba(245,158,11,0.3); }
-    .btn-blue { background: var(--gradient-blue); color: white; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
-    .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
-    .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
-    .btn-lg { padding: 16px 40px; font-size: 1.2rem; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+.muted { color: var(--text-muted); }
+.small { font-size: 0.82rem; }
+.ok { color: var(--green); font-weight: 600; }
+.err { color: #fca5a5; font-size: 0.88rem; }
+.text-center { text-align: center; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-    .input { width: 100%; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 1rem; outline: none; transition: border-color 0.2s; }
-    .input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
-    .input::placeholder { color: var(--text-muted); }
-    .input-sm { padding: 8px 12px; font-size: 0.85rem; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; background: rgba(124,58,237,0.2); color: #ddd6fe; border: 1px solid rgba(124,58,237,0.25); }
+.tag-btn { background: rgba(255,255,255,0.08); border: none; border-radius: 12px; width: 28px; height: 26px; cursor: pointer; font-size: 0.85rem; }
+.tag-btn:hover { background: rgba(255,255,255,0.18); }
+.voter-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
-    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
-    .input-row .input { flex: 1; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+.badge-gold { background: rgba(245,158,11,0.22); color: var(--gold-light); }
+.badge-red { background: rgba(239,68,68,0.15); color: #fca5a5; }
 
-    .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: rgba(124,58,237,0.2); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.2); }
-    .tag .remove { cursor: pointer; opacity: 0.6; font-size: 1rem; line-height: 1; }
-    .tag .remove:hover { opacity: 1; }
+.segmented { display: inline-flex; background: rgba(0,0,0,0.25); border-radius: 12px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.segmented button { border: none; background: transparent; padding: 9px 16px; border-radius: 9px; cursor: pointer; font-weight: 700; color: var(--text-muted); }
+.segmented button.active { background: var(--gradient-pink); color: white; }
+.plan-line { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); font-size: 0.9rem; line-height: 1.5; }
 
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
-    .badge-gold { background: rgba(245,158,11,0.2); color: var(--gold); }
-    .badge-green { background: rgba(16,185,129,0.2); color: var(--green); }
-    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+.hof-row { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.hof-row:last-child { border-bottom: none; }
+.hof-date { color: var(--text-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; min-width: 84px; }
+.hof-song { flex: 1; }
+.join-card { max-width: 420px; margin: 8px auto 0; }
 
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 40px rgba(245,158,11,0.6); } }
-    @keyframes slideReveal { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes starPop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
-    @keyframes recapSlideIn { from { opacity: 0; transform: scale(0.85) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-    @keyframes recapGlow { 0% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } 50% { box-shadow: 0 0 60px rgba(236,72,153,0.5), 0 0 100px rgba(124,58,237,0.3); } 100% { box-shadow: 0 0 30px rgba(236,72,153,0.2); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideReveal { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes starPop { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes recapSlideIn { from { opacity: 0; transform: scale(0.88) translateY(24px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes introZoom { 0% { opacity: 0; transform: scale(0.3) rotate(-5deg); } 60% { opacity: 1; transform: scale(1.08) rotate(1deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes introShine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes spotlightSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes floatParticle { 0% { transform: translateY(0) scale(1); opacity: 0; } 15% { opacity: 0.8; } 100% { transform: translateY(-110vh) scale(0.3); opacity: 0; } }
+@keyframes resultBarGrow { from { width: 0; } to { width: var(--bar-width); } }
+@keyframes shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+@keyframes countdownPop { 0% { transform: scale(0.2); opacity: 0; } 55% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes stageLight { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.08; } }
+@keyframes glowPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes drumDot { 0%, 100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-8px); opacity: 1; } }
+@keyframes deltaUp { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 25% { opacity: 1; transform: translateY(0) scale(1.15); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes bump { 0% { background: rgba(245,158,11,0.35); } 100% { background: var(--bg-card); } }
 
-    /* === SHOW FLAIR ANIMATIONS === */
-    @keyframes introZoom { 0% { opacity: 0; transform: scale(0.3) rotate(-5deg); } 60% { opacity: 1; transform: scale(1.08) rotate(1deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
-    @keyframes introShine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-    @keyframes introFadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes introPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.15); opacity: 1; } }
-    @keyframes spotlightSweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    @keyframes floatParticle { 0% { transform: translateY(0) scale(1); opacity: 0.7; } 50% { opacity: 1; } 100% { transform: translateY(-120vh) scale(0.3); opacity: 0; } }
-    @keyframes resultBarGrow { from { width: 0; } to { width: var(--bar-width); } }
-    @keyframes shimmer { 0% { left: -100%; } 100% { left: 200%; } }
-    @keyframes countdownPop { 0% { transform: scale(0.2); opacity: 0; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes winnerGlow { 0%, 100% { text-shadow: 0 0 20px rgba(245,158,11,0.5); } 50% { text-shadow: 0 0 60px rgba(245,158,11,0.9), 0 0 100px rgba(236,72,153,0.5); } }
-    @keyframes stageLight { 0%, 100% { opacity: 0.03; transform: scaleY(1); } 50% { opacity: 0.08; transform: scaleY(1.1); } }
+.animate-in { animation: fadeInUp 0.4s ease-out; }
+.animate-scale { animation: scaleIn 0.3s ease-out; }
 
-    /* Intro screen */
-    .intro-screen { position: relative; text-align: center; padding: 60px 20px 40px; overflow: hidden; min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .intro-screen::before {
-      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-      background: conic-gradient(from 0deg, transparent 0%, rgba(236,72,153,0.08) 10%, transparent 20%, rgba(124,58,237,0.08) 30%, transparent 40%);
-      animation: spotlightSweep 8s linear infinite; pointer-events: none;
-    }
-    .intro-badge { display: inline-block; padding: 8px 24px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; animation: introFadeUp 0.6s ease-out 0.2s both; }
-    .intro-emoji { font-size: 5rem; margin-bottom: 16px; animation: introZoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both; }
-    .intro-title {
-      font-size: 3rem; font-weight: 900; margin-bottom: 8px;
-      background: linear-gradient(90deg, var(--gold), var(--pink), var(--gold));
-      background-size: 200% auto;
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      animation: introZoom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both, introShine 3s linear 1.5s infinite;
-    }
-    .intro-theme { font-size: 1.4rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; animation: introFadeUp 0.6s ease-out 0.6s both; }
-    .intro-songs { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; }
-    .intro-song-pill {
-      display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-radius: 14px;
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px); text-align: left;
-    }
-    .intro-song-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
-    .intro-song-info { flex: 1; }
-    .intro-song-title { font-weight: 700; font-size: 0.95rem; }
-    .intro-song-artist { font-size: 0.8rem; color: var(--text-muted); }
-    .intro-start-btn { margin-top: 36px; animation: introFadeUp 0.6s ease-out 1.2s both; }
-    .intro-start-btn .btn { position: relative; overflow: hidden; }
-    .intro-start-btn .btn::after {
-      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      animation: shimmer 2.5s ease-in-out infinite 2s;
-    }
+/* Glow that pulses with opacity on a pseudo-element: no per-frame repaint of shadows. */
+.result-row.winner, .announce.twelve, .sb-row.winner { position: relative; }
+.result-row.winner::after, .announce.twelve::after, .sb-row.winner::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 34px rgba(245,158,11,0.55); animation: glowPulse 2s ease-in-out infinite;
+}
 
-    /* Floating particles */
-    .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
-    .particle {
-      position: absolute; bottom: -20px; border-radius: 50%;
-      animation: floatParticle var(--dur) ease-in infinite;
-      animation-delay: var(--delay);
-      opacity: 0;
-    }
+/* ===== Intro ===== */
+.intro-screen { position: relative; text-align: center; padding: 40px 12px 30px; overflow: hidden; min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.intro-screen::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(236,72,153,0.08) 10%, transparent 20%, rgba(124,58,237,0.08) 30%, transparent 40%);
+  animation: spotlightSweep 10s linear infinite; pointer-events: none;
+}
+.intro-badge { display: inline-block; padding: 8px 22px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; animation: fadeInUp 0.6s ease-out 0.2s both; }
+.intro-emoji { font-size: 5rem; margin-bottom: 12px; animation: introZoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both; }
+.intro-title {
+  font-size: 3rem; font-weight: 900; margin-bottom: 8px;
+  background: linear-gradient(90deg, var(--gold), var(--pink), var(--gold)); background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: introZoom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both, introShine 3s linear 1.5s infinite;
+}
+.intro-theme { font-size: 1.3rem; font-weight: 600; color: var(--text-muted); animation: fadeInUp 0.6s ease-out 0.6s both; }
+.intro-songs { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 520px; }
+.intro-song-pill { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 14px; background: rgba(255,255,255,0.06); border: 1px solid var(--line); text-align: left; animation: fadeInUp 0.5s ease-out both; }
+.intro-song-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+.intro-song-info { flex: 1; min-width: 0; }
+.intro-song-title { font-weight: 700; }
+.intro-song-artist { font-size: 0.82rem; color: var(--text-muted); }
+.intro-start-btn { margin-top: 32px; animation: fadeInUp 0.6s ease-out 1.2s both; }
+.intro-start-btn .btn { position: relative; overflow: hidden; }
+.intro-start-btn .btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent); animation: shimmer 2.5s ease-in-out infinite 2s; }
 
-    /* Stage lights on group/final screens */
-    .stage-lights { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 0; }
-    .stage-light {
-      position: absolute; top: -20%; width: 120px; height: 200%;
-      background: linear-gradient(180deg, var(--light-color) 0%, transparent 60%);
-      opacity: 0.04; transform-origin: top center;
-      animation: stageLight 4s ease-in-out infinite;
-    }
+.particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle { position: absolute; bottom: -20px; border-radius: 50%; opacity: 0; animation: floatParticle var(--dur) ease-in infinite; animation-delay: var(--delay); will-change: transform, opacity; }
+.stage-lights { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.stage-light { position: absolute; top: -20%; width: 120px; height: 200%; background: linear-gradient(180deg, var(--light-color) 0%, transparent 60%); opacity: 0.04; transform-origin: top center; animation: stageLight 4s ease-in-out infinite; }
 
-    /* Enhanced recap card — animated border */
-    .recap-card::before {
-      content: ''; position: absolute; inset: -2px; border-radius: 22px; z-index: -1;
-      background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue), var(--pink));
-      background-size: 300% 300%;
-      animation: introShine 4s linear infinite;
-      opacity: 0.6;
-    }
+/* ===== Ratings ===== */
+.stars { display: flex; gap: 2px; }
+.star { background: none; border: none; font-size: 2rem; cursor: pointer; user-select: none; filter: grayscale(1) brightness(0.35); transition: transform 0.12s; padding: 2px; line-height: 1; }
+.star:hover { transform: scale(1.15); }
+.star.active { filter: none; animation: starPop 0.25s ease-out; }
+.stars-big { justify-content: center; gap: 8px; }
+.stars-big .star { font-size: 2.6rem; }
+.stars-text { letter-spacing: -2px; }
 
-    /* Result bar animation */
-    .result-bar-container { position: relative; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 8px; overflow: hidden; }
-    .result-bar { height: 100%; border-radius: 3px; animation: resultBarGrow 1s ease-out forwards; }
+.emoji-rating { display: flex; gap: 8px; }
+.emoji-btn { background: rgba(255,255,255,0.06); border: 2px solid transparent; border-radius: 14px; cursor: pointer; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.emoji-face { font-size: 1.9rem; line-height: 1.1; filter: grayscale(0.7); opacity: 0.6; }
+.emoji-btn.active { border-color: var(--gold); background: rgba(245,158,11,0.15); }
+.emoji-btn.active .emoji-face { filter: none; opacity: 1; animation: starPop 0.25s ease-out; }
+.emoji-big { justify-content: center; gap: 10px; }
+.emoji-big .emoji-btn { flex: 1; padding: 12px 6px; max-width: 120px; }
+.emoji-big .emoji-face { font-size: 3.2rem; }
+.emoji-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
 
-    /* Enhanced winner */
-    .winner-song { animation: winnerGlow 2s ease-in-out infinite; }
+/* ===== Video ===== */
+.video-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 16px; }
+.yt-host, .yt-host iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+.video-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px; background: rgba(15,10,46,0.94); }
+.video-hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: rgba(0,0,0,0.75); padding: 8px 14px; border-radius: 10px; font-weight: 600; pointer-events: none; }
 
-    @media (max-width: 600px) {
-      .intro-title { font-size: 2rem; }
-      .intro-emoji { font-size: 3.5rem; }
-      .intro-theme { font-size: 1.1rem; }
-    }
+.thumb { display: block; object-fit: cover; background: #1a0a3e; }
+.thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 
-    .animate-in { animation: fadeInUp 0.4s ease-out; }
-    .animate-scale { animation: scaleIn 0.3s ease-out; }
+/* ===== Setup list ===== */
+.song-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); margin-bottom: 8px; }
+.song-number { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; background: var(--bg-card); flex-shrink: 0; }
+.song-thumb { width: 64px; height: 36px; border-radius: 6px; flex-shrink: 0; }
+.song-info { flex: 1; min-width: 0; }
+.song-title { font-weight: 600; }
+.song-artist { font-size: 0.82rem; color: var(--text-muted); }
+.song-meta { font-size: 0.74rem; color: var(--text-muted); font-style: italic; }
+.demo-banner { text-align: center; padding: 16px; border-radius: 12px; background: rgba(59,130,246,0.08); border: 1px dashed rgba(59,130,246,0.3); margin-bottom: 16px; }
+.demo-banner p { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 10px; }
 
-    .stars { display: flex; gap: 4px; }
-    .star { font-size: 2rem; cursor: pointer; transition: all 0.15s; user-select: none; filter: grayscale(1) brightness(0.35); }
-    .star:hover { transform: scale(1.15); }
-    .star.active { filter: none; animation: starPop 0.25s ease-out; }
+/* ===== Stage ===== */
+.group-label { text-align: center; font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; }
+.gl-text { background: var(--gradient-pink); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.gl-emoji { margin-right: 8px; }
+.gl-emoji.after { margin: 0 0 0 8px; }
+.group-sublabel { text-align: center; color: var(--text-muted); margin-bottom: 18px; font-size: 0.92rem; }
+.song-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; justify-content: center; }
+.song-tab { position: relative; padding: 9px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-card); cursor: pointer; font-size: 0.85rem; font-weight: 600; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-tab:hover { background: var(--bg-card-hover); }
+.song-tab.active { background: var(--gradient-pink); border-color: transparent; color: white; }
+.song-tab.voted { border-color: rgba(16,185,129,0.45); }
+.tab-check { position: absolute; top: -1px; right: -1px; width: 18px; height: 18px; border-radius: 0 12px 0 8px; background: var(--green); color: white; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
+.now-playing { text-align: center; margin-bottom: 12px; }
+.now-playing-count { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+.now-playing-song { font-size: 1.35rem; font-weight: 800; }
+.now-playing-artist { color: var(--text-muted); font-size: 0.92rem; }
+.voter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.voter-row:last-child { border-bottom: none; }
+.voter-name { font-weight: 600; font-size: 1rem; min-width: 80px; }
+.voter-status { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+.all-voted-banner { text-align: center; padding: 12px; border-radius: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); font-weight: 600; margin-top: 12px; }
+.nav-arrows { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; gap: 12px; }
+.nav-arrows .btn { min-width: 120px; }
+.nav-center { flex: 1; text-align: center; }
 
-    .video-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 16px; }
-    .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-    .video-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-muted); }
-    .video-placeholder span { font-size: 2rem; }
+/* QR panel and the slim bar shown during rounds */
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); margin-left: 8px; vertical-align: middle; }
+.live-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.vote-panel { border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
+.vote-panel-body { display: flex; gap: 22px; align-items: center; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+.vote-panel-qr { width: 190px; height: 190px; display: block; border-radius: 12px; background: white; }
+.vote-panel-info { text-align: center; }
+.vote-panel-url { font-size: 0.95rem; font-weight: 600; word-break: break-all; max-width: 280px; }
+.room-code { font-size: 2.2rem; font-weight: 900; letter-spacing: 8px; color: var(--gold); }
+.vote-bar { display: flex; width: 100%; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 9px 14px; margin-bottom: 14px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); cursor: pointer; font-size: 0.88rem; }
+.vote-bar b { color: var(--gold); letter-spacing: 2px; }
+.vote-bar-more { color: var(--text-muted); margin-left: 6px; }
 
-    .song-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; background: rgba(255,255,255,0.03); margin-bottom: 8px; transition: all 0.2s; }
-    .song-item:hover { background: rgba(255,255,255,0.06); }
-    .song-number { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; background: var(--bg-card); flex-shrink: 0; }
-    .song-info { flex: 1; min-width: 0; }
-    .song-title { font-weight: 600; font-size: 0.95rem; }
-    .song-artist { font-size: 0.8rem; color: var(--text-muted); }
-    .song-meta { font-size: 0.7rem; color: var(--text-muted); font-style: italic; }
+/* ===== Recap ===== */
+.recap-card { position: relative; background: linear-gradient(135deg, rgba(124,58,237,0.16), rgba(236,72,153,0.1)); border: 1px solid rgba(236,72,153,0.25); border-radius: 20px; overflow: hidden; animation: recapSlideIn 0.5s ease-out; margin-bottom: 18px; box-shadow: 0 0 40px rgba(236,72,153,0.18); }
+.recap-card .video-wrap { margin-bottom: 0; border-radius: 0; }
+.recap-thumb { width: 100%; aspect-ratio: 16 / 9; }
+.recap-info { padding: 20px; text-align: center; }
+.recap-number { font-size: 0.8rem; color: var(--pink); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 6px; }
+.recap-song-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+.recap-song-artist { font-size: 1.05rem; color: var(--text-muted); }
+.recap-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 16px; overflow: hidden; }
+.recap-progress-bar { height: 100%; background: var(--gradient-pink); transition: width 0.25s linear; }
+.recap-controls { display: flex; justify-content: center; gap: 12px; align-items: center; flex-wrap: wrap; }
+.recap-dots { text-align: center; margin-top: 12px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 3px; background: rgba(255,255,255,0.15); }
+.dot.current { background: var(--pink); }
+.dot.seen { background: var(--green); }
 
-    .song-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
-    .song-tab { position: relative; padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-card); color: var(--text); cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .song-tab:hover { background: var(--bg-card-hover); }
-    .song-tab.active { background: var(--gradient-pink); border-color: transparent; color: white; }
-    .song-tab.voted { border-color: rgba(16,185,129,0.4); }
-    .song-tab .tab-check { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--green); color: white; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+/* ===== Tiebreak ===== */
+.tiebreak-card { text-align: center; }
+.tiebreak-head { font-size: 1.05rem; margin-bottom: 4px; }
+.tiebreak-q { font-size: 1.25rem; font-weight: 800; margin-bottom: 14px; }
+.tb-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.tb-option { display: flex; flex-direction: column; gap: 4px; padding: 0 0 10px; border-radius: 14px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); cursor: pointer; text-align: center; transition: transform 0.15s, border-color 0.15s; }
+.tb-option:hover { transform: translateY(-3px); border-color: var(--gold); }
+.tb-option .thumb { width: 100%; aspect-ratio: 16 / 9; }
+.tb-title { font-weight: 800; padding: 4px 8px 0; }
+.tb-artist { font-size: 0.78rem; color: var(--text-muted); padding: 0 8px; }
+.tb-option.dim { opacity: 0.5; }
+.tb-options.phone { grid-template-columns: 1fr 1fr; }
 
-    .voter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; }
-    .voter-row:last-child { border-bottom: none; }
-    .voter-name { font-weight: 600; font-size: 1rem; min-width: 80px; }
+/* ===== Reveal ===== */
+.reveal-start { margin: 24px 0; }
+.auto-toggle { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 14px; color: var(--text-muted); font-size: 0.88rem; cursor: pointer; }
+.announce { text-align: center; padding: 22px 18px; border-radius: 20px; margin: 4px 0 18px; min-height: 168px; background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(236,72,153,0.16)); border: 1px solid rgba(236,72,153,0.3); animation: recapSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.announce.twelve { background: linear-gradient(135deg, rgba(245,158,11,0.26), rgba(236,72,153,0.18)); border-color: rgba(245,158,11,0.55); }
+.announce.pending { border-style: dashed; }
+.announce.done { min-height: 0; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.35); }
+.announce-who { font-size: 1.15rem; color: var(--text-muted); margin-bottom: 6px; }
+.announce-who b { color: var(--text); font-size: 1.5rem; }
+.announce-drum { font-size: 1.7rem; font-weight: 800; }
+.announce-phone { margin-top: 10px; font-weight: 700; color: var(--gold-light); animation: glowPulse 1.2s ease-in-out infinite; }
+.announce-final-list { font-size: 1.3rem; font-weight: 800; }
+.announce-twelve-song { display: flex; align-items: center; gap: 14px; margin-top: 4px; text-align: left; }
+.announce-thumb { width: 120px; height: 68px; border-radius: 10px; }
+.tie-note { margin-top: 8px; color: var(--gold-light); font-weight: 600; }
+.drum-dots { display: flex; gap: 8px; margin-top: 12px; }
+.drum-dots span { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); animation: drumDot 0.6s ease-in-out infinite; }
+.drum-dots span:nth-child(2) { animation-delay: 0.15s; }
+.drum-dots span:nth-child(3) { animation-delay: 0.3s; }
+.low-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+.low-chip { display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; border-radius: 30px; background: rgba(0,0,0,0.25); font-weight: 600; animation: scaleIn 0.35s ease-out both; }
+.low-pts { min-width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--gradient-gold); color: #1a0a3e; font-weight: 900; }
+.reveal-points { font-size: 3.6rem; font-weight: 900; line-height: 1; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: countdownPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.reveal-points.big { font-size: 5rem; }
+.reveal-goesto { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin: 6px 0 4px; }
+.reveal-song { font-size: 1.7rem; font-weight: 800; line-height: 1.15; }
+.reveal-controls { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 
-    .group-label { text-align: center; font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; background: var(--gradient-pink); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .group-sublabel { text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem; }
+.scoreboard { position: relative; }
+.sb-row {
+  position: absolute; left: 0; right: 0; top: 0; height: calc(var(--row) - 8px);
+  display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--line);
+  transition: transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s, border-color 0.4s;
+}
+.sb-row.bumped { animation: bump 1.4s ease-out; }
+.sb-row.qualified { border-color: rgba(245,158,11,0.45); background: rgba(245,158,11,0.09); }
+.sb-row.out { opacity: 0.55; }
+.sb-row.winner { border-color: rgba(245,158,11,0.6); background: rgba(245,158,11,0.15); }
+.sb-pos { width: 30px; text-align: center; font-weight: 900; font-size: 1.15rem; }
+.sb-thumb { width: 72px; height: 40px; border-radius: 6px; flex-shrink: 0; }
+.sb-info { flex: 1; min-width: 0; }
+.sb-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-artist { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-points { font-size: 1.5rem; font-weight: 900; color: var(--gold); min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+.sb-delta { color: var(--gold-light); font-weight: 900; animation: deltaUp 2s ease-out forwards; }
 
-    .now-playing { text-align: center; margin-bottom: 12px; }
-    .now-playing-count { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
-    .now-playing-song { font-size: 1.3rem; font-weight: 700; }
-    .now-playing-artist { color: var(--text-muted); font-size: 0.9rem; }
+/* ===== Winner ===== */
+.winner-container { text-align: center; padding: 30px 12px; }
+.winner-trophy { font-size: 5rem; margin-bottom: 10px; animation: scaleIn 0.5s ease-out; }
+.winner-label { font-size: 1.15rem; color: var(--gold); font-weight: 600; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 3px; }
+.winner-thumb { width: min(360px, 90%); aspect-ratio: 16 / 9; border-radius: 16px; margin: 0 auto 16px; box-shadow: 0 10px 40px rgba(245,158,11,0.3); }
+.winner-song { font-size: 2.4rem; font-weight: 900; margin-bottom: 6px; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 18px rgba(245,158,11,0.45)); }
+.winner-artist { font-size: 1.3rem; color: var(--text-muted); margin-bottom: 6px; }
+.winner-picker { font-size: 1.05rem; font-weight: 700; margin-bottom: 18px; }
+.winner-score { font-size: 3rem; font-weight: 900; color: var(--gold); }
+.winner-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.result-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; background: var(--bg-card); border: 1px solid var(--line); animation: slideReveal 0.4s ease-out both; }
+.result-row.winner { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.13); }
+.result-position { font-size: 1.4rem; font-weight: 900; width: 36px; text-align: center; }
+.result-info { flex: 1; min-width: 0; }
+.result-title { font-weight: 700; font-size: 1.05rem; }
+.result-artist { font-size: 0.85rem; color: var(--text-muted); }
+.result-score { font-size: 1.3rem; font-weight: 900; color: var(--gold); }
+.result-bar-container { position: relative; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.result-bar { height: 100%; border-radius: 3px; width: 0; animation: resultBarGrow 1s ease-out forwards; }
+.picker-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.picker-row:last-child { border-bottom: none; }
+.picker-row.top { font-size: 1.15rem; }
+.picker-name { flex: 1; font-weight: 700; }
+.picker-points { font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; }
 
-    .result-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; margin-bottom: 10px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); }
-    .result-row.qualified { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
-    .result-row.winner { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.15); animation: glow 2s ease-in-out infinite; }
-    .result-position { font-size: 1.4rem; font-weight: 900; width: 36px; text-align: center; }
-    .result-info { flex: 1; }
-    .result-title { font-weight: 700; font-size: 1.05rem; }
-    .result-artist { font-size: 0.85rem; color: var(--text-muted); }
-    .result-score { font-size: 1.3rem; font-weight: 900; color: var(--gold); }
+/* ===== Phone ===== */
+.phone-wrap { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100vh; display: flex; flex-direction: column; }
+.phone-header { text-align: center; margin-bottom: 16px; }
+.phone-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; letter-spacing: 1px; }
+.phone-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; text-align: center; }
+.phone-h { font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
+.phone-eyebrow { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+.phone-thumb { width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; margin-bottom: 12px; }
+.phone-song-title { font-size: 1.6rem; font-weight: 900; line-height: 1.15; }
+.phone-song-artist { color: var(--text-muted); margin-top: 4px; }
+.phone-picker { margin-top: 6px; font-size: 0.85rem; color: var(--gold-light); font-weight: 600; }
+.phone-msg { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; }
+.phone-now { margin-top: 10px; color: var(--text); }
+.phone-vote-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.phone-vote-row:last-child { border-bottom: none; padding-bottom: 2px; }
+.phone-vote-name { font-weight: 700; font-size: 1.15rem; margin-bottom: 6px; }
+.phone-sending { color: var(--gold-light); font-size: 0.85rem; font-weight: 600; }
+.phone-turn { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); }
+.phone-big-btn { width: 100%; font-size: 1.5rem; padding: 26px 16px; border-radius: 18px; }
 
-    .winner-container { text-align: center; padding: 40px 20px; }
-    .winner-trophy { font-size: 5rem; margin-bottom: 16px; animation: scaleIn 0.5s ease-out; }
-    .winner-label { font-size: 1.2rem; color: var(--gold); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 3px; }
-    .winner-song { font-size: 2.4rem; font-weight: 900; margin-bottom: 8px; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .winner-artist { font-size: 1.3rem; color: var(--text-muted); margin-bottom: 30px; }
-    .winner-score { font-size: 3rem; font-weight: 900; color: var(--gold); }
-    .winner-score-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; }
+@media (max-width: 640px) {
+  :root { --row: 58px; }
+  .logo { font-size: 2rem; }
+  .header { padding-top: 54px; }
+  .header-tools { left: 0; right: 0; top: 8px; justify-content: center; }
+  .container { padding: 10px 14px; }
+  .card { padding: 16px; }
+  .star { font-size: 1.6rem; }
+  .input-row { flex-direction: column; align-items: stretch; }
+  .song-tab { padding: 8px 12px; font-size: 0.8rem; }
+  .recap-song-title { font-size: 1.4rem; }
+  .intro-title { font-size: 2.1rem; }
+  .intro-emoji { font-size: 3.5rem; }
+  .sb-thumb { display: none; }
+  .sb-points { font-size: 1.25rem; }
+  .announce-thumb { width: 84px; height: 48px; }
+  .reveal-song { font-size: 1.35rem; }
+  .nav-arrows .btn { min-width: 0; }
+}
 
-    .section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; }
-
-    .nav-arrows { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 12px; }
-    .nav-arrows .btn { min-width: 120px; }
-    .nav-center { flex: 1; text-align: center; }
-
-    .text-center { text-align: center; }
-    .mt-16 { margin-top: 16px; }
-    .mt-24 { margin-top: 24px; }
-    .mb-16 { margin-bottom: 16px; }
-    .flex-between { display: flex; align-items: center; justify-content: space-between; }
-
-    .all-voted-banner { text-align: center; padding: 16px; border-radius: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); font-weight: 600; margin-top: 16px; }
-
-    /* Recap */
-    .recap-card {
-      position: relative;
-      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1));
-      border: 1px solid rgba(236,72,153,0.2);
-      border-radius: 20px; padding: 0; overflow: hidden;
-      animation: recapSlideIn 0.5s ease-out, recapGlow 3s ease-in-out infinite;
-      margin-bottom: 20px;
-    }
-    .recap-thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
-    .recap-info { padding: 24px; text-align: center; }
-    .recap-number { font-size: 0.8rem; color: var(--pink); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 8px; }
-    .recap-song-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
-    .recap-song-artist { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 12px; }
-    .recap-score-badge { display: inline-block; padding: 6px 20px; border-radius: 20px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); font-weight: 700; font-size: 1rem; }
-    .recap-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px; overflow: hidden; }
-    .recap-progress-bar { height: 100%; background: var(--gradient-pink); border-radius: 2px; transition: width 0.3s linear; }
-    .recap-controls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; align-items: center; }
-
-    .demo-banner { text-align: center; padding: 16px; border-radius: 12px; background: rgba(59,130,246,0.08); border: 1px dashed rgba(59,130,246,0.3); margin-bottom: 20px; }
-    .demo-banner p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; }
-
-    @media (max-width: 600px) {
-      .logo { font-size: 2rem; }
-      .container { padding: 12px; }
-      .card { padding: 16px; }
-      .star { font-size: 1.6rem; }
-      .input-row { flex-direction: column; }
-      .song-tab { padding: 8px 12px; font-size: 0.8rem; }
-      .recap-song-title { font-size: 1.4rem; }
-    }
-
-    /* === Multi-device voting (host QR panel) === */
-    .live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); margin-left: 8px; vertical-align: middle; transition: all 0.3s; }
-    .live-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .vote-panel { border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
-    .vote-panel-body { display: flex; gap: 22px; align-items: center; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
-    .vote-panel-qr img { width: 200px; height: 200px; display: block; border-radius: 12px; }
-    .vote-panel-info { text-align: center; }
-    .vote-panel-hint { font-size: 0.8rem; color: var(--text-muted); }
-    .vote-panel-url { font-size: 0.95rem; font-weight: 600; word-break: break-all; max-width: 280px; }
-    .room-code { font-size: 2.2rem; font-weight: 900; letter-spacing: 8px; color: var(--gold); margin-top: 2px; }
-
-    /* === Phone voting view === */
-    .phone-wrap { max-width: 480px; margin: 0 auto; padding: 18px 16px 40px; min-height: 100vh; display: flex; flex-direction: column; }
-    .phone-header { text-align: center; margin-bottom: 18px; }
-    .phone-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; letter-spacing: 1px; }
-    .phone-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 28px 20px; text-align: center; backdrop-filter: blur(10px); }
-    .phone-h { font-size: 1.4rem; font-weight: 800; margin-bottom: 18px; }
-    .phone-eyebrow { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
-    .phone-song-title { font-size: 1.7rem; font-weight: 900; line-height: 1.15; }
-    .phone-song-artist { color: var(--text-muted); margin-top: 4px; }
-    .phone-prompt { margin-top: 22px; font-weight: 600; font-size: 1.05rem; }
-    .phone-stars { display: flex; justify-content: center; gap: 10px; margin: 18px 0 8px; }
-    .phone-stars .star { font-size: 3rem; }
-    .phone-voted { color: var(--green); font-weight: 700; margin-top: 6px; }
-    .phone-msg { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; }
-    .phone-count { color: var(--text-muted); font-size: 0.85rem; margin-top: 14px; }
-    .voter-pick-list { display: flex; flex-direction: column; gap: 12px; }
-    .voter-pick-btn { width: 100%; font-size: 1.1rem; padding: 16px; }
-    .phone-vote-row { padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .phone-vote-row:last-child { border-bottom: none; padding-bottom: 4px; }
-    .phone-vote-name { font-weight: 700; font-size: 1.15rem; margin-bottom: 4px; }
-    .phone-vote-check { color: var(--green); }
-    .phone-vote-row .phone-stars { margin: 6px 0 0; gap: 8px; }
-    .phone-vote-row .phone-stars .star { font-size: 2.5rem; }
-
-    /* === Mello-style points reveal === */
-    .reveal-announce { text-align: center; padding: 28px 20px; border-radius: 20px; margin: 8px 0 20px; background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(236,72,153,0.16)); border: 1px solid rgba(236,72,153,0.3); animation: recapSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
-    .reveal-announce.winner { background: linear-gradient(135deg, rgba(245,158,11,0.24), rgba(236,72,153,0.18)); border-color: rgba(245,158,11,0.55); animation: recapSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1), glow 1.8s ease-in-out infinite 0.45s; }
-    .reveal-points { font-size: 3.6rem; font-weight: 900; line-height: 1; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; animation: countdownPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-    .reveal-goesto { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin: 10px 0 6px; }
-    .reveal-song { font-size: 1.7rem; font-weight: 800; line-height: 1.15; }
-    .reveal-song-artist { color: var(--text-muted); margin-top: 2px; }
-    .result-row.hidden-row { opacity: 0.45; }
-    .result-row .mystery { letter-spacing: 4px; color: var(--text-muted); font-weight: 800; }
-  </style>
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .particles, .stage-lights { display: none; }
+}
+</style>
 </head>
 <body>
   <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useReducer, useEffect, useRef } = React;
-
-    // ==================== MULTI-DEVICE VOTING (Supabase) ====================
-    // Dedicated Familje-Mello Supabase project. The anon public key is browser-safe by
-    // design (security comes from RLS, not from hiding it).
-    //   • Live sync (joining, names, votes, ballots) runs over Realtime "broadcast" —
-    //     pure websocket pub/sub, works with or without a database.
-    //   • Durability/resume uses one tiny table `games(id, snapshot, updated_at)`. The
-    //     host snapshots its full state there so an aborted game can be continued.
-    //     If the table is missing, those calls no-op and the app still works live.
-    const SUPABASE_URL = 'https://bhurxoknmyfqymtiaycx.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodXJ4b2tubXlmcXltdGlheWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzI5NTAsImV4cCI6MjA5NzU0ODk1MH0.YbblDF0jfZNzdIMy8rMF3t19b7b6onD91VVLi9N8kYg';
-    let _sb = null;
-    function getSupabase() {
-      if (_sb) return _sb;
-      try { if (window.supabase && window.supabase.createClient) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
-      catch (e) { console.warn('Supabase init failed', e); }
-      return _sb;
-    }
-    function makeGameCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
-      let c = '';
-      for (let i = 0; i < 5; i++) c += chars[Math.floor(Math.random() * chars.length)];
-      return c;
-    }
-    function genId(prefix) { return (prefix || '') + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
-    function getDeviceId() {
-      try { let d = localStorage.getItem('mello_device'); if (!d) { d = genId('d_'); localStorage.setItem('mello_device', d); } return d; }
-      catch (e) { return genId('d_'); }
-    }
-    function getGameParam() {
-      try { const p = new URLSearchParams(window.location.search); const r = p.get('game') || p.get('room'); return r ? r.toUpperCase() : null; }
-      catch (e) { return null; }
-    }
-    // Durable game state — survives a closed/crashed host so a game can be resumed.
-    async function loadGame(id) {
-      const sb = getSupabase(); if (!sb || !id) return null;
-      try {
-        const { data, error } = await sb.from('games').select('snapshot').eq('id', id).maybeSingle();
-        if (error) { console.warn('loadGame:', error.message); return null; }
-        return data ? data.snapshot : null;
-      } catch (e) { console.warn('loadGame failed', e); return null; }
-    }
-    async function saveGame(id, snapshot) {
-      const sb = getSupabase(); if (!sb || !id) return;
-      try {
-        const { error } = await sb.from('games').upsert({ id, snapshot, updated_at: new Date().toISOString() });
-        if (error) console.warn('saveGame:', error.message);
-      } catch (e) { console.warn('saveGame failed', e); }
-    }
-    // Distil the host's current state into the minimal payload a phone needs to render a ballot.
-    function getActiveBallot(state) {
-      const voters = state.voters.map(v => ({ id: v.id, name: v.name }));
-      let songs = null, voteKey = null, label = '';
-      if (state.phase === 'group') {
-        songs = state.songs.filter(s => s.group === state.currentGroup);
-        voteKey = 'group_' + state.currentGroup;
-        label = getGroupTheme(state.currentGroup).name;
-      } else if (state.phase === 'final') {
-        songs = state.finalists; voteKey = 'final'; label = 'Finalen';
-      }
-      if (songs && voteKey) {
-        const idx = Math.min(state.currentSongIndex, songs.length - 1);
-        const cur = songs[idx] || songs[0];
-        if (cur) {
-          const pv = (state.votes[voteKey] || {})[cur.id] || {};
-          return { active: true, voteKey, label, songId: cur.id, title: cur.title, artist: cur.artist || '', songIndex: idx, songCount: songs.length, voters, votes: pv };
-        }
-      }
-      return { active: false, phase: state.phase, voters };
-    }
-
-    // ==================== DEMO SONGS ====================
-    // 16 songs curated for boys (7, 7, 4) who love MJ and attitude.
-    // Picked for: energy, swagger, iconic music videos, variety across decades.
-    // highlightStart = the "best bit" timestamp in seconds for recaps.
-    const DEMO_SONGS = [
-      // MJ x2 — their heroes, and two of the greatest music videos ever made
-      { title: "Thriller",                      artist: "Michael Jackson",             youtubeId: "sOnqjkJTMaA", highlightStart: 438, year: "1982" },  // zombie dance!
-      { title: "Smooth Criminal",               artist: "Michael Jackson",             youtubeId: "h_D3VFfhvs4", highlightStart: 250, year: "1988" },  // the lean!
-      // Rock attitude
-      { title: "Bohemian Rhapsody",             artist: "Queen",                       youtubeId: "fJ9rUzIMcZQ", highlightStart: 180, year: "1975" },  // operatic section
-      { title: "Seven Nation Army",             artist: "The White Stripes",           youtubeId: "0J2QdDbelmY", highlightStart: 20,  year: "2003" },  // THAT riff
-      { title: "Smells Like Teen Spirit",       artist: "Nirvana",                     youtubeId: "hTWKbfoikeg", highlightStart: 33,  year: "1991" },  // chaos energy
-      // Electronic / dance — Daft Punk vibes
-      { title: "Around the World",              artist: "Daft Punk",                   youtubeId: "LKYPYj2XX80", highlightStart: 100, year: "1997" },  // robot dancers
-      { title: "Virtual Insanity",              artist: "Jamiroquai",                  youtubeId: "4JkIs37a2JE", highlightStart: 60,  year: "1996" },  // moving floor magic
-      { title: "Weapon of Choice",              artist: "Fatboy Slim",                 youtubeId: "wCDIYvFmgW8", highlightStart: 70,  year: "2001" },  // Christopher Walken FLIES
-      // Mind-blowing music videos
-      { title: "Take On Me",                    artist: "a-ha",                        youtubeId: "djV11Xbc914", highlightStart: 47,  year: "1985" },  // comic book animation
-      { title: "Sledgehammer",                  artist: "Peter Gabriel",               youtubeId: "OJWJE0x7T4Q", highlightStart: 80,  year: "1986" },  // stop-motion masterpiece
-      { title: "Here It Goes Again",            artist: "OK Go",                       youtubeId: "dTAAsCNK7RA", highlightStart: 30,  year: "2006" },  // treadmill choreography!
-      { title: "Feel Good Inc",                 artist: "Gorillaz",                    youtubeId: "HyHNuVaZJ-k", highlightStart: 45,  year: "2005" },  // animated band
-      // Hip hop swagger
-      { title: "Intergalactic",                 artist: "Beastie Boys",                youtubeId: "qORYO0atB6g", highlightStart: 50,  year: "1998" },  // giant robot in Tokyo!
-      // Pure fun — singalongs and dancing
-      { title: "Uptown Funk",                   artist: "Mark Ronson ft. Bruno Mars",  youtubeId: "OPf0YbXqDm0", highlightStart: 60,  year: "2014" },  // maximum swagger
-      { title: "Gangnam Style",                 artist: "PSY",                         youtubeId: "9bZkp7q19f0", highlightStart: 60,  year: "2012" },  // THE dance, boys will lose it
-      { title: "Happy",                         artist: "Pharrell Williams",           youtubeId: "ZbZSe6N_BXs", highlightStart: 100, year: "2013" },  // pure joy
-    ];
-
-    // ==================== GROUP THEMES ====================
-    const GROUP_THEMES = [
-      { name: 'Eldprovet', emoji: '\uD83D\uDD25', tagline: 'Bara de t\u00e5ligaste \u00f6verlever!', accent: '#ef4444', accentRgb: '239,68,68' },
-      { name: 'Neonnatten', emoji: '\uD83C\uDF03', tagline: 'Musiken som lyser i m\u00f6rkret', accent: '#3b82f6', accentRgb: '59,130,246' },
-      { name: 'Guldrushen', emoji: '\u2B50', tagline: 'Vem tar hem skatten?', accent: '#f59e0b', accentRgb: '245,158,11' },
-      { name: 'Rymdresan', emoji: '\uD83D\uDE80', tagline: 'Till finalen \u2014 och bortom!', accent: '#a855f7', accentRgb: '168,85,247' },
-    ];
-    function getGroupTheme(groupIndex) { return GROUP_THEMES[groupIndex % GROUP_THEMES.length]; }
-
-    // ==================== HELPERS ====================
-
-    function extractYouTubeId(url) {
-      if (!url) return null;
-      const t = url.trim();
-      const patterns = [
-        /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-        /^([a-zA-Z0-9_-]{11})$/
-      ];
-      for (const p of patterns) { const m = t.match(p); if (m) return m[1]; }
-      return null;
-    }
-
-    function shuffleArray(arr) {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-      return a;
-    }
-
-    function parseTimestamp(str) {
-      if (!str) return null;
-      const s = str.trim();
-      const cm = s.match(/^(\d+):(\d{1,2})$/);
-      if (cm) return parseInt(cm[1]) * 60 + parseInt(cm[2]);
-      const nm = s.match(/^(\d+)$/);
-      if (nm) return parseInt(nm[1]);
-      return null;
-    }
-
-    function formatTimestamp(sec) {
-      if (sec == null) return '';
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      return m + ':' + (s < 10 ? '0' : '') + s;
-    }
-
-    // Default highlight: ~60% through a typical pop song (~3:30 = 210s)
-    // So default = 210 * 0.6 = 126 seconds. Used when no highlight is set.
-    const DEFAULT_HIGHLIGHT_SEC = 126;
-
-    function getHighlightStart(song) {
-      if (song.highlightStart != null && song.highlightStart > 0) return song.highlightStart;
-      return DEFAULT_HIGHLIGHT_SEC;
-    }
-
-    function fireConfetti() {
-      const dur = 4000, end = Date.now() + dur;
-      const colors = ['#f59e0b', '#ec4899', '#7c3aed', '#3b82f6', '#10b981'];
-      (function frame() {
-        confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 }, colors });
-        confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-    }
-
-    function fireMiniConfetti() {
-      confetti({ particleCount: 60, spread: 70, origin: { y: 0.65 }, colors: ['#f59e0b', '#ec4899', '#7c3aed'] });
-    }
-
-    function ytThumb(videoId) { return 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg'; }
-
-    // ==================== REDUCER ====================
-
-    const initialState = {
-      phase: 'setup', songs: [], voters: [], groupCount: 4,
-      currentGroup: 0, currentSongIndex: 0, votes: {},
-      finalists: [], finalResults: [], groupResults: {},
-      recapIndex: 0, recapPlaying: false,
-      groupRecapIndex: 0, groupRecapPlaying: false, groupRecapSongs: [],
-    };
-
-    function reducer(state, action) {
-      switch (action.type) {
-        case 'ADD_SONG': {
-          const id = 's' + Date.now() + Math.random().toString(36).substr(2, 4);
-          return { ...state, songs: [...state.songs, { id, ...action.payload, group: -1 }] };
-        }
-        case 'LOAD_DEMO': {
-          const d = DEMO_SONGS.map((s, i) => ({ ...s, id: 'demo' + i, group: -1 }));
-          return { ...state, songs: d };
-        }
-        case 'REMOVE_SONG':
-          return { ...state, songs: state.songs.filter(s => s.id !== action.id) };
-        case 'ADD_VOTER': {
-          const id = action.id || ('v' + Date.now() + Math.random().toString(36).substr(2, 4));
-          if (state.voters.some(v => v.id === id)) return state; // idempotent: re-register on resume
-          return { ...state, voters: [...state.voters, { id, name: action.name }] };
-        }
-        case 'REMOVE_VOTER':
-          return { ...state, voters: state.voters.filter(v => v.id !== action.id) };
-        case 'START_TOURNAMENT': {
-          const gc = Math.min(4, Math.ceil(state.songs.length / 3));
-          const sh = shuffleArray(state.songs);
-          const wg = sh.map((s, i) => ({ ...s, group: i % gc }));
-          return { ...state, phase: 'groupIntro', songs: wg, groupCount: gc, currentGroup: 0, currentSongIndex: 0, votes: {} };
-        }
-        case 'START_GROUP':
-          return { ...state, phase: 'group', currentSongIndex: 0 };
-        case 'SET_CURRENT_SONG':
-          return { ...state, currentSongIndex: action.index };
-        case 'SET_VOTE': {
-          const { songId, voterId, stars, voteKey } = action;
-          const pv = { ...(state.votes[voteKey] || {}) };
-          const sv = { ...(pv[songId] || {}) };
-          sv[voterId] = stars;
-          pv[songId] = sv;
-          return { ...state, votes: { ...state.votes, [voteKey]: pv } };
-        }
-        case 'FINISH_GROUP': {
-          const vk = 'group_' + state.currentGroup;
-          const gs = state.songs.filter(s => s.group === state.currentGroup);
-          const pv = state.votes[vk] || {};
-          const sorted = gs.map(song => {
-            const sv = pv[song.id] || {};
-            return { ...song, total: Object.values(sv).reduce((a, b) => a + b, 0) };
-          }).sort((a, b) => b.total - a.total);
-          return { ...state, phase: 'groupRecap', groupRecapSongs: gs, groupRecapIndex: 0, groupRecapPlaying: false, groupResults: { ...state.groupResults, [state.currentGroup]: sorted } };
-        }
-        case 'GROUPRECAP_SET_INDEX':
-          return { ...state, groupRecapIndex: action.index, groupRecapPlaying: action.autoplay !== false };
-        case 'GROUPRECAP_SET_PLAYING':
-          return { ...state, groupRecapPlaying: action.playing };
-        case 'GROUPRECAP_DONE':
-          return { ...state, phase: 'groupResults' };
-        case 'NEXT_GROUP': {
-          const next = state.currentGroup + 1;
-          if (next >= state.groupCount) {
-            const fin = [];
-            for (let g = 0; g < state.groupCount; g++) { const gr = state.groupResults[g] || []; fin.push(...gr.slice(0, 2)); }
-            return { ...state, phase: 'recap', finalists: fin, recapIndex: 0, recapPlaying: false };
-          }
-          return { ...state, phase: 'groupIntro', currentGroup: next, currentSongIndex: 0 };
-        }
-        case 'RECAP_SET_INDEX':
-          return { ...state, recapIndex: action.index, recapPlaying: action.autoplay !== false };
-        case 'RECAP_SET_PLAYING':
-          return { ...state, recapPlaying: action.playing };
-        case 'RECAP_DONE':
-          return { ...state, phase: 'final', currentSongIndex: 0 };
-        case 'FINISH_FINAL': {
-          const pv = state.votes['final'] || {};
-          const fr = state.finalists.map(song => {
-            const sv = pv[song.id] || {};
-            return { ...song, total: Object.values(sv).reduce((a, b) => a + b, 0) };
-          }).sort((a, b) => b.total - a.total);
-          return { ...state, phase: 'winner', finalResults: fr };
-        }
-        case 'RESET': return { ...initialState };
-        case 'RESTORE': return action.snapshot ? { ...initialState, ...action.snapshot } : state;
-        default: return state;
-      }
-    }
-
-    // ==================== COMPONENTS ====================
-
-    function StarRating({ value, onChange }) {
-      const [hover, setHover] = useState(0);
-      return (
-        <div className="stars">
-          {[1,2,3,4,5].map(n => (
-            <span key={n}
-              className={'star' + (n <= (hover || value) ? ' active' : '')}
-              onClick={() => onChange(n)}
-              onMouseEnter={() => setHover(n)}
-              onMouseLeave={() => setHover(0)}
-            >&#11088;</span>
-          ))}
-        </div>
-      );
-    }
-
-    function YouTubeEmbed({ videoId, startTime }) {
-      if (!videoId) return <div className="video-wrap"><div className="video-placeholder"><span>&#127916;</span></div></div>;
-      const origin = window.location.origin || 'http://localhost:8000';
-      let src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&origin=' + encodeURIComponent(origin);
-      if (startTime != null && startTime > 0) src += '&start=' + startTime;
-      return <div className="video-wrap" key={videoId + '_' + (startTime||0)}><iframe src={src} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen title="YouTube" /></div>;
-    }
-
-    function YouTubeClipEmbed({ videoId, startTime, duration }) {
-      if (!videoId) return null;
-      const origin = window.location.origin || 'http://localhost:8000';
-      const s = startTime || 0, e = s + (duration || 25);
-      const src = 'https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&autoplay=1&start=' + s + '&end=' + e + '&origin=' + encodeURIComponent(origin);
-      return <div className="video-wrap" key={videoId + '_clip_' + s}><iframe src={src} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen title="Clip" /></div>;
-    }
-
-    function PhaseIndicator({ phase, groupCount, currentGroup }) {
-      const phases = [];
-      for (let i = 0; i < groupCount; i++) phases.push({ key: 'group_' + i, label: 'Delt. ' + (i+1) });
-      phases.push({ key: 'recap', label: 'Recap' });
-      phases.push({ key: 'final', label: 'Final' });
-      let ak = 'setup';
-      if (phase === 'groupIntro' || phase === 'group' || phase === 'groupRecap' || phase === 'groupResults') ak = 'group_' + currentGroup;
-      else if (phase === 'recap') ak = 'recap';
-      else if (phase === 'final') ak = 'final';
-      else if (phase === 'winner') ak = 'done';
-      const ai = phases.findIndex(p => p.key === ak);
-      return (
-        <div className="phase-indicator">
-          {phases.map((p, i) => (
-            <span key={p.key} className={'phase-dot' + (i === ai ? ' active' : '') + ((i < ai || ak === 'done') ? ' completed' : '')}>
-              {(i < ai || ak === 'done') ? '\u2713 ' : ''}{p.label}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    // ==================== FLOATING PARTICLES ====================
-
-    function FloatingParticles({ accent }) {
-      const particles = useRef([...Array(12)].map(() => ({
-        left: Math.random() * 100 + '%',
-        size: 3 + Math.random() * 5,
-        dur: 6 + Math.random() * 8 + 's',
-        delay: Math.random() * 6 + 's',
-        opacity: 0.3 + Math.random() * 0.5,
-      }))).current;
-      const color = accent || 'var(--pink)';
-      return (
-        <div className="particles">
-          {particles.map((p, i) => (
-            <div key={i} className="particle" style={{
-              left: p.left, width: p.size, height: p.size,
-              background: color,
-              boxShadow: '0 0 ' + (p.size * 2) + 'px ' + color,
-              '--dur': p.dur, '--delay': p.delay,
-            }} />
-          ))}
-        </div>
-      );
-    }
-
-    // ==================== STAGE LIGHTS ====================
-
-    function StageLights({ accent }) {
-      const lights = [
-        { left: '10%', rotate: '8deg', delay: '0s' },
-        { left: '30%', rotate: '-5deg', delay: '1.2s' },
-        { left: '55%', rotate: '3deg', delay: '0.6s' },
-        { left: '75%', rotate: '-7deg', delay: '1.8s' },
-        { left: '90%', rotate: '4deg', delay: '0.3s' },
-      ];
-      return (
-        <div className="stage-lights">
-          {lights.map((l, i) => (
-            <div key={i} className="stage-light" style={{
-              left: l.left, transform: 'rotate(' + l.rotate + ')',
-              '--light-color': accent || 'rgba(236,72,153,0.15)',
-              animationDelay: l.delay,
-            }} />
-          ))}
-        </div>
-      );
-    }
-
-    // ==================== GROUP INTRO ====================
-
-    function GroupIntroScreen({ state, dispatch }) {
-      const theme = getGroupTheme(state.currentGroup);
-      const groupSongs = state.songs.filter(s => s.group === state.currentGroup);
-
-      return (
-        <div className="intro-screen">
-          <FloatingParticles accent={theme.accent} />
-          <StageLights accent={theme.accent} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div className="intro-badge" style={{ background: 'rgba(' + theme.accentRgb + ',0.15)', color: theme.accent, border: '1px solid rgba(' + theme.accentRgb + ',0.3)' }}>
-              Delt\u00e4vling {state.currentGroup + 1} av {state.groupCount}
-            </div>
-            <div className="intro-emoji">{theme.emoji}</div>
-            <div className="intro-title">{theme.name}</div>
-            <div className="intro-theme">{theme.tagline}</div>
-            <div className="intro-songs">
-              {groupSongs.map((s, i) => (
-                <div key={s.id} className="intro-song-pill" style={{ animation: 'introFadeUp 0.5s ease-out ' + (0.8 + i * 0.15) + 's both' }}>
-                  <div className="intro-song-num" style={{ background: 'rgba(' + theme.accentRgb + ',0.2)', color: theme.accent }}>{i + 1}</div>
-                  <div className="intro-song-info">
-                    <div className="intro-song-title">{s.title}</div>
-                    {s.artist && <div className="intro-song-artist">{s.artist}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="intro-start-btn">
-              <button className="btn btn-lg" style={{ background: 'linear-gradient(135deg, ' + theme.accent + ', var(--purple))', color: 'white', boxShadow: '0 4px 30px rgba(' + theme.accentRgb + ',0.4)' }} onClick={() => dispatch({ type: 'START_GROUP' })}>
-                K\u00f6r ig\u00e5ng!
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== SETUP ====================
-
-    function SetupScreen({ state, dispatch, room }) {
-      const [url, setUrl] = useState('');
-      const [title, setTitle] = useState('');
-      const [artist, setArtist] = useState('');
-      const [highlight, setHighlight] = useState('');
-      const [voterName, setVoterName] = useState('');
-      const [error, setError] = useState('');
-
-      const addSong = () => {
-        const yid = extractYouTubeId(url.trim());
-        if (!yid) { setError('Klistra in en giltig YouTube-l\u00e4nk'); return; }
-        if (!title.trim()) { setError('Fyll i l\u00e5tens titel'); return; }
-        dispatch({ type: 'ADD_SONG', payload: { title: title.trim(), artist: artist.trim(), youtubeId: yid, highlightStart: parseTimestamp(highlight) } });
-        setUrl(''); setTitle(''); setArtist(''); setHighlight(''); setError('');
-      };
-      const addVoter = () => { if (!voterName.trim()) return; dispatch({ type: 'ADD_VOTER', name: voterName.trim() }); setVoterName(''); };
-      const canStart = state.songs.length >= 4 && state.voters.length >= 1;
-      const hk = (e, fn) => { if (e.key === 'Enter') fn(); };
-
-      return (
-        <div className="animate-in">
-          {room && room.resumed && (
-            <div className="demo-banner" style={{ borderColor: 'rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.08)' }}>
-              <p>&#128260; &#197;terupptog ett p&#229;g&#229;ende spel (kod {room.code}).</p>
-              <button className="btn btn-ghost btn-sm" onClick={room.newGame}>B&#246;rja ett nytt spel ist&#228;llet</button>
-            </div>
-          )}
-          {room && room.code && <VotePanel code={room.code} connected={room.connected} />}
-          {state.songs.length === 0 && (
-            <div className="demo-banner">
-              <p>Vill du testk&#246;ra? Ladda 16 klassiker fr&#229;n 1969&#8211;2017!</p>
-              <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'LOAD_DEMO' })}>&#127925; Ladda demol&#229;tar</button>
-            </div>
-          )}
-          <div className="card">
-            <div className="card-title">&#127925; L&#228;gg till l&#229;tar</div>
-            <div className="input-row">
-              <input className="input" placeholder="YouTube-l\u00e4nk" value={url} onChange={e => setUrl(e.target.value)} />
-            </div>
-            <div className="input-row">
-              <input className="input" placeholder="Titel" value={title} onChange={e => setTitle(e.target.value)} />
-              <input className="input" placeholder="Artist (valfritt)" value={artist} onChange={e => setArtist(e.target.value)} />
-            </div>
-            <div className="input-row">
-              <input className="input input-sm" placeholder="Highlight-tid, t.ex. 1:05 (valfritt — standard: 60% in)" value={highlight} onChange={e => setHighlight(e.target.value)} onKeyDown={e => hk(e, addSong)} style={{ maxWidth: 320 }} />
-              <button className="btn btn-primary btn-sm" onClick={addSong}>+ L&#228;gg till</button>
-            </div>
-            {error && <div style={{ color: 'var(--red)', fontSize: '0.85rem', marginTop: 4 }}>{error}</div>}
-            {state.songs.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>{state.songs.length} l&#229;tar tillagda</div>
-                {state.songs.map((song, i) => (
-                  <div key={song.id} className="song-item">
-                    <div className="song-number">{i + 1}</div>
-                    <div className="song-info">
-                      <div className="song-title">{song.title}</div>
-                      {song.artist && <div className="song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>}
-                      {song.highlightStart != null && <div className="song-meta">Highlight: {formatTimestamp(song.highlightStart)}</div>}
-                    </div>
-                    <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'REMOVE_SONG', id: song.id })} style={{ padding: '4px 10px', fontSize: '0.8rem' }}>&#10005;</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="card">
-            <div className="card-title">&#128104;&#8205;&#128105;&#8205;&#128103;&#8205;&#128102; R&#246;stare</div>
-            <div className="input-row">
-              <input className="input" placeholder="Namn" value={voterName} onChange={e => setVoterName(e.target.value)} onKeyDown={e => hk(e, addVoter)} />
-              <button className="btn btn-primary btn-sm" onClick={addVoter}>+ L&#228;gg till</button>
-            </div>
-            {state.voters.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                {state.voters.map(v => <span key={v.id} className="tag">{v.name}<span className="remove" onClick={() => dispatch({ type: 'REMOVE_VOTER', id: v.id })}>&#10005;</span></span>)}
-              </div>
-            )}
-          </div>
-          <div className="text-center mt-24">
-            <button className="btn btn-gold btn-lg" disabled={!canStart} onClick={() => dispatch({ type: 'START_TOURNAMENT' })}>&#10024; Starta Familje-Mello! &#10024;</button>
-            {!canStart && <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 12 }}>L&#228;gg till minst 4 l&#229;tar och 1 r&#246;stare</div>}
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== SONG STAGE ====================
-
-    function SongStageScreen({ state, dispatch, songs, voteKey, groupLabel, groupSub, onFinish, finishLabel, accent, accentRgb, room }) {
-      const cur = songs[state.currentSongIndex] || songs[0];
-      const ci = state.currentSongIndex;
-      const pv = state.votes[voteKey] || {};
-      const isVoted = (sid) => { const sv = pv[sid] || {}; return state.voters.every(v => sv[v.id] != null); };
-      const allDone = songs.every(s => isVoted(s.id));
-      const curVotes = pv[cur.id] || {};
-      const curDone = isVoted(cur.id);
-      const votedN = songs.filter(s => isVoted(s.id)).length;
-      const go = (i) => dispatch({ type: 'SET_CURRENT_SONG', index: i });
-      const vote = (vid, stars) => dispatch({ type: 'SET_VOTE', songId: cur.id, voterId: vid, stars, voteKey });
-      // Votes stay hidden during the deltävling — reveal one voter's stars only while editing.
-      const [editing, setEditing] = useState(null);
-      useEffect(() => { setEditing(null); }, [ci]);
-
-      return (
-        <div className="animate-in">
-          <div className="group-label">{groupLabel}</div>
-          <div className="group-sublabel">{groupSub}</div>
-          {room && room.code && <VotePanel code={room.code} connected={room.connected} />}
-          <div className="song-tabs">
-            {songs.map((s, i) => {
-              const v = isVoted(s.id);
-              return <button key={s.id} className={'song-tab' + (i === ci ? ' active' : '') + (v ? ' voted' : '')} onClick={() => go(i)}>{i+1}. {s.title}{v && <span className="tab-check">&#10003;</span>}</button>;
-            })}
-          </div>
-          <div className="now-playing">
-            <div className="now-playing-count">L&#229;t {ci+1} av {songs.length}</div>
-            <div className="now-playing-song">{cur.title}</div>
-            {cur.artist && <div className="now-playing-artist">{cur.artist}</div>}
-          </div>
-          <YouTubeEmbed videoId={cur.youtubeId} />
-          <div className="card">
-            <div className="card-title">R&#246;sta p&#229; denna l&#229;t</div>
-            {state.voters.map(v => {
-              const has = curVotes[v.id] != null;
-              const isEditing = editing === v.id;
-              return (
-                <div key={v.id} className="voter-row">
-                  <div className="voter-name">{v.name}</div>
-                  {isEditing
-                    ? <StarRating value={curVotes[v.id] || 0} onChange={(s) => { vote(v.id, s); setEditing(null); }} />
-                    : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ color: has ? 'var(--green)' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>{has ? '✓ Har röstat' : 'Väntar…'}</span>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing(v.id)}>{has ? 'Ändra' : 'Rösta här'}</button>
-                      </div>
-                    )}
-                </div>
-              );
-            })}
-            {curDone && <div className="all-voted-banner" style={{ marginTop: 12 }}>&#10003; Alla har r&#246;stat!</div>}
-            <div style={{ textAlign: 'center', marginTop: 12, color: 'var(--text-muted)', fontSize: '0.8rem' }}>Po&#228;ngen &#228;r hemliga tills recapen &#228;r klar &#129323;</div>
-          </div>
-          <div className="nav-arrows">
-            <button className="btn btn-ghost" onClick={() => go(ci-1)} disabled={ci === 0}>&#8592; F&#246;rra</button>
-            <div className="nav-center" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{votedN} av {songs.length} klara</div>
-            {ci < songs.length - 1
-              ? <button className="btn btn-blue" onClick={() => go(ci+1)}>N&#228;sta &#8594;</button>
-              : <div style={{ width: 120 }} />}
-          </div>
-          {allDone && <div className="text-center mt-24 animate-scale"><button className="btn btn-gold btn-lg" onClick={onFinish}>{finishLabel}</button></div>}
-          {!allDone && <div className="text-center mt-16" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Ge stj&#228;rnor till alla l&#229;tar f&#246;r att g&#229; vidare</div>}
-        </div>
-      );
-    }
-
-    // ==================== GROUP RESULTS ====================
-
-    function GroupResultsScreen({ state, dispatch }) {
-      const res = state.groupResults[state.currentGroup] || [];
-      const last = state.currentGroup >= state.groupCount - 1;
-      const theme = getGroupTheme(state.currentGroup);
-      const N = res.length;
-      // Classic Mello points awarded by final rank (1st → 12, 2nd → 10, 3rd → 8, 4th → 6 …).
-      // Ranking is still decided by star totals; these are just the points shown.
-      const MELLO_POINTS = [12, 10, 8, 6, 5, 4, 3, 2, 1];
-      const pointsFor = (i) => (MELLO_POINTS[i] != null ? MELLO_POINTS[i] : 1);
-      const maxScore = 12;
-      const [revealCount, setRevealCount] = useState(0);
-      const [playing, setPlaying] = useState(false);
-      const allRevealed = revealCount >= N;
-      const justIndex = revealCount > 0 ? N - revealCount : -1; // res index uncovered this step
-      const justSong = justIndex >= 0 && justIndex < N ? res[justIndex] : null;
-      const winnerReveal = justIndex === 0;
-
-      // Drive the reveal: each step uncovers the next-lowest song, building to the winner.
-      // Extra suspense right before the winner.
-      useEffect(() => {
-        if (!playing || allRevealed) return;
-        const delay = revealCount === 0 ? 500 : (revealCount === N - 1 ? 3400 : 2600);
-        const t = setTimeout(() => setRevealCount(c => Math.min(N, c + 1)), delay);
-        return () => clearTimeout(t);
-      }, [playing, revealCount, allRevealed, N]);
-
-      // Fireworks on each reveal, a full burst for the delt\u00e4vling winner.
-      useEffect(() => {
-        if (revealCount === 0) return;
-        if (N - revealCount === 0) fireConfetti(); else fireMiniConfetti();
-      }, [revealCount]);
-
-      const skip = () => { setPlaying(false); setRevealCount(N); fireConfetti(); };
-
-      return (
-        <div className="animate-in" style={{ position: 'relative' }}>
-          <StageLights accent={theme.accent} />
-          {allRevealed && <FloatingParticles accent={theme.accent} />}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div className="group-label">{theme.emoji} Resultat &#8212; {theme.name}</div>
-            <div className="group-sublabel">Topp 2 g&#229;r vidare till finalen!</div>
-
-            {revealCount === 0 && !playing && (
-              <div className="text-center" style={{ margin: '28px 0' }}>
-                <div style={{ fontSize: '1.05rem', color: 'var(--text-muted)', marginBottom: 18 }}>Po&#228;ngen &#228;r hemliga &#8212; dags att avsl&#246;ja dem! &#129321;</div>
-                <button className="btn btn-gold btn-lg" onClick={() => setPlaying(true)}>&#127908; Starta po&#228;ngavsl&#246;jningen</button>
-              </div>
-            )}
-
-            {justSong && (
-              <div key={'ann' + revealCount} className={'reveal-announce' + (winnerReveal ? ' winner' : '')}>
-                <div className="reveal-points">{pointsFor(justIndex)}</div>
-                <div className="reveal-goesto">po&#228;ng {winnerReveal ? '\u2014 och vinner delt\u00e4vlingen!' : 'g\u00E5r till'}</div>
-                <div className="reveal-song">{winnerReveal ? '\uD83C\uDFC6 ' : ''}{justSong.title}</div>
-                {justSong.artist && <div className="reveal-song-artist">{justSong.artist}</div>}
-              </div>
-            )}
-
-            {(playing || revealCount > 0) && (
-              <div style={{ marginTop: 8 }}>
-                {res.map((s, i) => {
-                  const revealed = i >= N - revealCount;
-                  const q = i < 2;
-                  const barPct = Math.round((pointsFor(i) / maxScore) * 100);
-                  return (
-                    <div key={s.id} className={'result-row' + (revealed && q ? ' qualified' : '') + (revealed ? '' : ' hidden-row')} style={{ flexWrap: 'wrap' }}>
-                      <div className="result-position">{revealed ? (i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)) : (i+1)}</div>
-                      <div className="result-info">
-                        <div className="result-title">{revealed ? s.title : <span className="mystery">&#9679; &#9679; &#9679;</span>}</div>
-                        {revealed && s.artist && <div className="result-artist">{s.artist}</div>}
-                        {revealed && (
-                          <div className="result-bar-container">
-                            <div className="result-bar" style={{ '--bar-width': barPct + '%', background: q ? 'var(--gradient-gold)' : 'rgba(255,255,255,0.15)' }} />
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                        <div className="result-score">{revealed ? pointsFor(i) : '\u2013'}</div>
-                        {revealed && (q ? <span className="badge badge-gold">FINAL</span> : <span className="badge badge-red">Ute</span>)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {playing && !allRevealed && (
-              <div className="text-center mt-16">
-                <button className="btn btn-ghost btn-sm" onClick={skip}>&#9197; Hoppa &#246;ver</button>
-              </div>
-            )}
-
-            {allRevealed && (
-              <div className="text-center mt-24">
-                <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'NEXT_GROUP' })}>
-                  {last ? '\uD83C\uDFC6 Till recapen!' : '\u27A1\uFE0F N\u00e4sta delt\u00e4vling'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== GROUP RECAP ====================
-
-    function GroupRecapScreen({ state, dispatch }) {
-      const { groupRecapSongs, groupRecapIndex, groupRecapPlaying, currentGroup } = state;
-      const songs = groupRecapSongs;
-      const song = songs[groupRecapIndex];
-      const isLast = groupRecapIndex >= songs.length - 1;
-      const CLIP_DUR = 20;
-      const [progress, setProgress] = useState(0);
-      const timerRef = useRef(null);
-      const theme = getGroupTheme(currentGroup);
-
-      useEffect(() => {
-        setProgress(0);
-        if (groupRecapPlaying) {
-          const start = Date.now();
-          timerRef.current = setInterval(() => {
-            const el = (Date.now() - start) / 1000;
-            setProgress(Math.min(100, (el / CLIP_DUR) * 100));
-            if (el >= CLIP_DUR) {
-              clearInterval(timerRef.current);
-              if (!isLast) dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex + 1 });
-              else dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: false });
-            }
-          }, 200);
-        }
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-      }, [groupRecapIndex, groupRecapPlaying]);
-
-      if (!song) return null;
-
-      return (
-        <div className="animate-in" key={'gr' + groupRecapIndex} style={{ position: 'relative' }}>
-          <FloatingParticles accent={theme.accent} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-          <div className="group-label">{theme.emoji} Recap &#8212; {theme.name}</div>
-          <div className="group-sublabel">{groupRecapPlaying ? 'H\u00f6jdpunkter fr\u00e5n omg\u00e5ngen!' : 'L\u00e5t oss minnas l\u00e5tarna innan vi ser resultatet'}</div>
-
-          <div className="recap-card">
-            {groupRecapPlaying ? (
-              <YouTubeClipEmbed videoId={song.youtubeId} startTime={getHighlightStart(song)} duration={CLIP_DUR} />
-            ) : (
-              <img className="recap-thumb" src={ytThumb(song.youtubeId)} alt={song.title} onError={(e) => { e.target.style.background = '#1a0a3e'; e.target.style.minHeight = '200px'; }} />
-            )}
-            <div className="recap-info">
-              <div className="recap-number">L&#229;t {groupRecapIndex + 1} av {songs.length}</div>
-              <div className="recap-song-title">{song.title}</div>
-              <div className="recap-song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>
-              {groupRecapPlaying && <div className="recap-progress"><div className="recap-progress-bar" style={{ width: progress + '%' }} /></div>}
-            </div>
-          </div>
-
-          <div className="recap-controls">
-            <button className="btn btn-ghost btn-sm" disabled={groupRecapIndex === 0} onClick={() => dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex - 1 })}>&#8592; F&#246;rra</button>
-            {!groupRecapPlaying
-              ? <button className="btn btn-primary" onClick={() => dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: true })}>&#9654; Spela highlight</button>
-              : <button className="btn btn-ghost" onClick={() => dispatch({ type: 'GROUPRECAP_SET_PLAYING', playing: false })}>&#9646;&#9646; Paus</button>
-            }
-            {!isLast
-              ? <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'GROUPRECAP_SET_INDEX', index: groupRecapIndex + 1 })}>N&#228;sta &#8594;</button>
-              : <div style={{ width: 100 }} />
-            }
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            {songs.map((_, i) => (
-              <span key={i} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', margin: '0 3px', background: i === groupRecapIndex ? 'var(--pink)' : i < groupRecapIndex ? 'var(--green)' : 'rgba(255,255,255,0.15)', transition: 'all 0.3s' }} />
-            ))}
-          </div>
-
-          <div className="text-center mt-24">
-            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'GROUPRECAP_DONE' })}>&#128202; Visa resultat!</button>
-          </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== FINAL RECAP ====================
-
-    function RecapScreen({ state, dispatch }) {
-      const { finalists, recapIndex, recapPlaying } = state;
-      const song = finalists[recapIndex];
-      const isLast = recapIndex >= finalists.length - 1;
-      const CLIP_DUR = 25;
-      const [progress, setProgress] = useState(0);
-      const timerRef = useRef(null);
-
-      useEffect(() => {
-        setProgress(0);
-        if (recapPlaying) {
-          const start = Date.now();
-          timerRef.current = setInterval(() => {
-            const el = (Date.now() - start) / 1000;
-            setProgress(Math.min(100, (el / CLIP_DUR) * 100));
-            if (el >= CLIP_DUR) {
-              clearInterval(timerRef.current);
-              if (!isLast) dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex + 1 });
-              else dispatch({ type: 'RECAP_SET_PLAYING', playing: false });
-            }
-          }, 200);
-        }
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-      }, [recapIndex, recapPlaying]);
-
-      return (
-        <div className="animate-in" key={recapIndex} style={{ position: 'relative' }}>
-          <FloatingParticles accent="#f59e0b" />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-          <div className="group-label">&#9733; Finalisterna &#9733;</div>
-          <div className="group-sublabel">{recapPlaying ? 'Lyssna p\u00e5 h\u00f6jdpunkterna!' : 'M\u00f6t alla som g\u00e5tt vidare till finalen'}</div>
-
-          <div className="recap-card">
-            {recapPlaying ? (
-              <YouTubeClipEmbed videoId={song.youtubeId} startTime={getHighlightStart(song)} duration={CLIP_DUR} />
-            ) : (
-              <img className="recap-thumb" src={ytThumb(song.youtubeId)} alt={song.title} onError={(e) => { e.target.style.background = '#1a0a3e'; e.target.style.minHeight = '200px'; }} />
-            )}
-            <div className="recap-info">
-              <div className="recap-number">Finalist {recapIndex + 1} av {finalists.length}</div>
-              <div className="recap-song-title">{song.title}</div>
-              <div className="recap-song-artist">{song.artist}{song.year ? ' (' + song.year + ')' : ''}</div>
-              <div className="recap-score-badge">&#9733; {song.total || '?'} po&#228;ng i gruppen</div>
-              {recapPlaying && <div className="recap-progress"><div className="recap-progress-bar" style={{ width: progress + '%' }} /></div>}
-            </div>
-          </div>
-
-          <div className="recap-controls">
-            <button className="btn btn-ghost btn-sm" disabled={recapIndex === 0} onClick={() => dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex - 1 })}>&#8592; F&#246;rra</button>
-            {!recapPlaying
-              ? <button className="btn btn-primary" onClick={() => dispatch({ type: 'RECAP_SET_PLAYING', playing: true })}>&#9654; Spela highlight</button>
-              : <button className="btn btn-ghost" onClick={() => dispatch({ type: 'RECAP_SET_PLAYING', playing: false })}>&#9646;&#9646; Paus</button>
-            }
-            {!isLast
-              ? <button className="btn btn-blue btn-sm" onClick={() => dispatch({ type: 'RECAP_SET_INDEX', index: recapIndex + 1 })}>N&#228;sta &#8594;</button>
-              : <div style={{ width: 100 }} />
-            }
-          </div>
-
-          {/* Dot indicators */}
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            {finalists.map((_, i) => (
-              <span key={i} style={{
-                display: 'inline-block', width: 10, height: 10, borderRadius: '50%', margin: '0 3px',
-                background: i === recapIndex ? 'var(--pink)' : i < recapIndex ? 'var(--green)' : 'rgba(255,255,255,0.15)',
-                transition: 'all 0.3s',
-              }} />
-            ))}
-          </div>
-
-          <div className="text-center mt-24">
-            <button className="btn btn-gold btn-lg" onClick={() => dispatch({ type: 'RECAP_DONE' })}>&#127942; Till finalomr&#246;stningen!</button>
-          </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== WINNER ====================
-
-    function WinnerScreen({ state, dispatch }) {
-      const w = state.finalResults[0];
-      const maxScore = Math.max(...state.finalResults.map(s => s.total), 1);
-      useEffect(() => { const t = setTimeout(fireConfetti, 300); return () => clearTimeout(t); }, []);
-      return (
-        <div className="animate-in" style={{ position: 'relative' }}>
-          <FloatingParticles accent="#f59e0b" />
-          <StageLights accent="rgba(245,158,11,0.2)" />
-          <div className="winner-container" style={{ position: 'relative', zIndex: 1 }}>
-            <div className="winner-trophy">&#127942;</div>
-            <div className="winner-label">Vinnare av Familje-Mello</div>
-            <div className="winner-song">{w.title}</div>
-            {w.artist && <div className="winner-artist">{w.artist}</div>}
-            <div className="winner-score">{w.total} po&#228;ng</div>
-            <div className="winner-score-label">av max {state.voters.length * 5}</div>
-          </div>
-          <div className="section-title">Slutst&#228;llning</div>
-          {state.finalResults.map((s, i) => {
-            const barPct = Math.round((s.total / maxScore) * 100);
-            return (
-              <div key={s.id} className={'result-row' + (i===0?' winner':'')} style={{ animation: 'slideReveal 0.4s ease-out '+(i*0.1)+'s both', flexWrap: 'wrap' }}>
-                <div className="result-position">{i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)}</div>
-                <div className="result-info">
-                  <div className="result-title">{s.title}</div>
-                  {s.artist && <div className="result-artist">{s.artist}</div>}
-                  <div className="result-bar-container">
-                    <div className="result-bar" style={{ '--bar-width': barPct + '%', background: i === 0 ? 'var(--gradient-gold)' : i < 3 ? 'var(--gradient-pink)' : 'rgba(255,255,255,0.15)', animationDelay: (i * 0.1 + 0.3) + 's' }} />
-                  </div>
-                </div>
-                <div className="result-score">{s.total}</div>
-              </div>
-            );
-          })}
-          <div className="text-center mt-24" style={{ marginBottom: 40 }}>
-            <button className="btn btn-primary btn-lg" onClick={fireConfetti}>&#127881; Mer konfetti!</button>
-            <div style={{ marginTop: 16 }}><button className="btn btn-ghost" onClick={() => dispatch({ type: 'RESET' })}>Nytt Mello</button></div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==================== HOST GAME (id, resume, phone inputs) ====================
-
-    function useHostGame(state, dispatch) {
-      const [code, setCode] = useState(null);
-      const [connected, setConnected] = useState(false);
-      const [resumed, setResumed] = useState(false);
-      const channelRef = useRef(null);
-      const ballotRef = useRef(null);
-      const stateRef = useRef(state);
-      stateRef.current = state;
-
-      const ballot = getActiveBallot(state);
-      ballotRef.current = ballot;
-
-      // Decide the game id on load: resume an in-progress game from the DB if we have one,
-      // otherwise mint a fresh code.
-      useEffect(() => {
-        let alive = true;
-        (async () => {
-          let savedId = null;
-          try { savedId = localStorage.getItem('mello_host_game'); } catch (e) {}
-          if (savedId) {
-            const snap = await loadGame(savedId);
-            if (alive && snap && snap.phase && snap.phase !== 'winner') {
-              dispatch({ type: 'RESTORE', snapshot: snap });
-              setResumed(true);
-              setCode(savedId);
-              return;
-            }
-          }
-          const id = makeGameCode();
-          try { localStorage.setItem('mello_host_game', id); } catch (e) {}
-          if (alive) { setCode(id); saveGame(id, stateRef.current); }
-        })();
-        return () => { alive = false; };
-      }, []);
-
-      // Channel: receive phone inputs, answer "hello" with the current ballot.
-      useEffect(() => {
-        if (!code) return;
-        const sb = getSupabase();
-        if (!sb) return;
-        const ch = sb.channel('mello-game-' + code, { config: { broadcast: { ack: false } } });
-        ch.on('broadcast', { event: 'vote' }, ({ payload }) => {
-          if (!payload) return;
-          const { songId, voterId, stars, voteKey } = payload;
-          if (songId && voterId && voteKey && stars >= 1 && stars <= 5) {
-            dispatch({ type: 'SET_VOTE', songId, voterId, stars: Math.round(stars), voteKey });
-          }
-        });
-        ch.on('broadcast', { event: 'register' }, ({ payload }) => {
-          if (payload && payload.id && payload.name) dispatch({ type: 'ADD_VOTER', id: payload.id, name: String(payload.name).slice(0, 24) });
-        });
-        ch.on('broadcast', { event: 'unregister' }, ({ payload }) => {
-          if (payload && payload.id) dispatch({ type: 'REMOVE_VOTER', id: payload.id });
-        });
-        ch.on('broadcast', { event: 'hello' }, () => {
-          if (channelRef.current && ballotRef.current) channelRef.current.send({ type: 'broadcast', event: 'ballot', payload: ballotRef.current });
-        });
-        ch.subscribe((s) => setConnected(s === 'SUBSCRIBED'));
-        channelRef.current = ch;
-        return () => { try { sb.removeChannel(ch); } catch (e) {} channelRef.current = null; };
-      }, [code, dispatch]);
-
-      // Re-broadcast the ballot whenever it changes (new song, phase, or vote tally).
-      const ballotJson = JSON.stringify(ballot);
-      useEffect(() => {
-        if (channelRef.current && connected) channelRef.current.send({ type: 'broadcast', event: 'ballot', payload: ballot });
-      }, [ballotJson, connected]);
-
-      // Persist a snapshot (debounced) so an aborted game can be resumed.
-      const stateJson = JSON.stringify(state);
-      useEffect(() => {
-        if (!code) return;
-        const t = setTimeout(() => saveGame(code, stateRef.current), 800);
-        return () => clearTimeout(t);
-      }, [stateJson, code]);
-
-      const newGame = () => {
-        const id = makeGameCode();
-        try { localStorage.setItem('mello_host_game', id); } catch (e) {}
-        dispatch({ type: 'RESET' });
-        setResumed(false);
-        setCode(id);
-        saveGame(id, initialState);
-      };
-
-      return { code, connected, resumed, newGame };
-    }
-
-    function VotePanel({ code, connected }) {
-      const [qr, setQr] = useState(null);
-      const [open, setOpen] = useState(true);
-      const base = (window.location.origin || '') + window.location.pathname;
-      const url = base + '?game=' + code;
-      useEffect(() => {
-        try {
-          if (window.qrcode) {
-            const qr = window.qrcode(0, 'M');
-            qr.addData(url);
-            qr.make();
-            setQr(qr.createDataURL(6, 12));
-          }
-        } catch (e) { /* QR is a convenience; the room code still works */ }
-      }, [url]);
-      if (!code) return null;
-      return (
-        <div className="card vote-panel">
-          <div className="flex-between" style={{ cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
-            <div className="card-title" style={{ marginBottom: 0 }}>
-              &#128241; R&#246;sta i mobilen
-              <span className={'live-dot' + (connected ? ' on' : '')} title={connected ? 'Live' : 'Ansluter…'} />
-            </div>
-            <span style={{ color: 'var(--text-muted)' }}>{open ? '▲' : '▼'}</span>
-          </div>
-          {open && (
-            <div className="vote-panel-body">
-              {qr && <div className="vote-panel-qr"><img src={qr} alt="QR-kod" /></div>}
-              <div className="vote-panel-info">
-                <div className="vote-panel-hint">Skanna koden eller g&#229; till</div>
-                <div className="vote-panel-url">{url.replace(/^https?:\/\//, '')}</div>
-                <div className="vote-panel-hint" style={{ marginTop: 12 }}>Spelkod</div>
-                <div className="room-code">{code}</div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ==================== PHONE VOTING VIEW ====================
-
-    function PhoneStars({ value, onChange }) {
-      return (
-        <div className="phone-stars">
-          {[1,2,3,4,5].map(n => (
-            <span key={n} className={'star' + (n <= value ? ' active' : '')} onClick={() => onChange(n)}>&#11088;</span>
-          ))}
-        </div>
-      );
-    }
-
-    function PhoneVoterManager({ parts, name, setName, addPart, removePart, compact }) {
-      // Always show the add field when this phone has no voters yet, even mid-game.
-      const [open, setOpen] = useState(!compact || parts.length === 0);
-      if (compact && !open) {
-        return (
-          <div className="text-center" style={{ marginTop: 16 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}>&#128100; R&#246;stare p&#229; den h&#228;r telefonen ({parts.length})</button>
-          </div>
-        );
-      }
-      return (
-        <div className="phone-card" style={{ marginTop: 14, textAlign: 'left' }}>
-          <div className="flex-between" style={{ marginBottom: 12 }}>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>R&#246;stare p&#229; den h&#228;r telefonen</div>
-            {compact && <span style={{ color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setOpen(false)}>&#9650;</span>}
-          </div>
-          {parts.length === 0 && <div className="phone-msg" style={{ marginBottom: 10 }}>L&#228;gg till alla som r&#246;star h&#228;rifr&#229;n &#8212; en eller flera.</div>}
-          {parts.map(p => (
-            <div key={p.id} className="voter-row">
-              <div className="voter-name">{p.name}</div>
-              <button className="btn btn-ghost btn-sm" onClick={() => removePart(p.id)}>Ta bort</button>
-            </div>
-          ))}
-          <div className="input-row" style={{ marginTop: 12, marginBottom: 0 }}>
-            <input className="input" placeholder="Namn" value={name} maxLength={24} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addPart(); }} />
-            <button className="btn btn-primary btn-sm" onClick={addPart}>+ L&#228;gg till</button>
-          </div>
-        </div>
-      );
-    }
-
-    function PhoneGame({ code }) {
-      const [ballot, setBallot] = useState(null);
-      const [status, setStatus] = useState('connecting'); // connecting | live | error
-      const [parts, setParts] = useState(() => { try { return JSON.parse(localStorage.getItem('mello_parts_' + code) || '[]'); } catch (e) { return []; } });
-      const [name, setName] = useState('');
-      const [pending, setPending] = useState({}); // `${songId}:${partId}` -> stars
-      const channelRef = useRef(null);
-      const partsRef = useRef(parts);
-      partsRef.current = parts;
-
-      const persistParts = (next) => { setParts(next); try { localStorage.setItem('mello_parts_' + code, JSON.stringify(next)); } catch (e) {} };
-
-      useEffect(() => {
-        const sb = getSupabase();
-        if (!sb) { setStatus('error'); return; }
-        const ch = sb.channel('mello-game-' + code, { config: { broadcast: { ack: false } } });
-        ch.on('broadcast', { event: 'ballot' }, ({ payload }) => { if (payload) setBallot(payload); });
-        ch.subscribe((s) => {
-          if (s === 'SUBSCRIBED') {
-            setStatus('live');
-            ch.send({ type: 'broadcast', event: 'hello', payload: {} });
-            // Re-announce our voters so a freshly (re)started host learns them.
-            partsRef.current.forEach(p => ch.send({ type: 'broadcast', event: 'register', payload: { id: p.id, name: p.name } }));
-          } else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('error');
-        });
-        channelRef.current = ch;
-        return () => { try { sb.removeChannel(ch); } catch (e) {} };
-      }, [code]);
-
-      const addPart = () => {
-        const n = name.trim(); if (!n) return;
-        const p = { id: genId('p_'), name: n.slice(0, 24) };
-        persistParts([...partsRef.current, p]);
-        setName('');
-        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'register', payload: { id: p.id, name: p.name } });
-      };
-      const removePart = (id) => {
-        persistParts(partsRef.current.filter(p => p.id !== id));
-        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'unregister', payload: { id } });
-      };
-
-      const starsFor = (partId) => {
-        if (!ballot || !ballot.active) return 0;
-        const k = ballot.songId + ':' + partId;
-        if (pending[k] != null) return pending[k];
-        return (ballot.votes && ballot.votes[partId]) || 0;
-      };
-      const sendVote = (partId, stars) => {
-        if (!ballot || !ballot.active) return;
-        const k = ballot.songId + ':' + partId;
-        setPending(p => ({ ...p, [k]: stars }));
-        if (channelRef.current) channelRef.current.send({ type: 'broadcast', event: 'vote', payload: { voterId: partId, songId: ballot.songId, stars, voteKey: ballot.voteKey } });
-      };
-
-      const mgrProps = { parts, name, setName, addPart, removePart };
-
-      let content;
-      if (status === 'error') {
-        content = <div className="phone-card"><div className="phone-msg">Kunde inte ansluta. Kontrollera n&#228;tet och ladda om sidan.</div></div>;
-      } else if (ballot && ballot.active) {
-        content = (
-          <div>
-            <div className="phone-card">
-              <div className="phone-eyebrow">{ballot.label} &#183; L&#229;t {ballot.songIndex + 1} av {ballot.songCount}</div>
-              <div className="phone-song-title">{ballot.title}</div>
-              {ballot.artist && <div className="phone-song-artist">{ballot.artist}</div>}
-              {parts.length === 0
-                ? <div className="phone-msg" style={{ marginTop: 16 }}>L&#228;gg till ditt namn nedan f&#246;r att kunna r&#246;sta.</div>
-                : parts.map(p => {
-                    const s = starsFor(p.id);
-                    return (
-                      <div key={p.id} className="phone-vote-row">
-                        <div className="phone-vote-name">{p.name}{s > 0 && <span className="phone-vote-check"> &#10003;</span>}</div>
-                        <PhoneStars value={s} onChange={(v) => sendVote(p.id, v)} />
-                      </div>
-                    );
-                  })}
-            </div>
-            <PhoneVoterManager {...mgrProps} compact />
-          </div>
-        );
-      } else {
-        let msg = 'Vänta på nästa låt…';
-        if (!ballot) msg = 'Ansluter till spelet…';
-        else if (ballot.phase === 'setup') msg = parts.length ? 'Du är med! Väntar på att spelet ska börja…' : 'Lägg till ditt namn nedan så är du med!';
-        else if (ballot.phase === 'winner') msg = 'Spelet är slut — tack för att du röstade! 🏆';
-        else if (ballot.phase === 'groupRecap' || ballot.phase === 'recap') msg = 'Recap pågår — titta på stora skärmen! 👀';
-        else if (ballot.phase === 'groupResults') msg = 'Dags för poäng — titta på stora skärmen!';
-        content = (
-          <div>
-            <div className="phone-card"><div className="phone-msg">{msg}</div></div>
-            <PhoneVoterManager {...mgrProps} />
-          </div>
-        );
-      }
-
-      return (
-        <div className="phone-wrap">
-          <div className="phone-header">
-            <div className="logo" style={{ fontSize: '1.7rem' }}>Familje-Mello</div>
-            <div className="phone-sub">Spel {code} <span className={'live-dot' + (status === 'live' ? ' on' : '')} /></div>
-          </div>
-          {content}
-        </div>
-      );
-    }
-
-    // ==================== APP ====================
-
-    function App() {
-      const [state, dispatch] = useReducer(reducer, initialState);
-      const room = useHostGame(state, dispatch);
-      return (
-        <div className="container">
-          <div className="header">
-            <div className="logo">Familje-Mello</div>
-            <div className="logo-sub">Familjens egen musikt&#228;vling</div>
-          </div>
-          {state.phase !== 'setup' && <PhaseIndicator phase={state.phase} groupCount={state.groupCount} currentGroup={state.currentGroup} />}
-          <div style={{ flex: 1, paddingBottom: 20 }}>
-            {state.phase === 'setup' && <SetupScreen state={state} dispatch={dispatch} room={room} />}
-            {state.phase === 'groupIntro' && <GroupIntroScreen state={state} dispatch={dispatch} />}
-            {state.phase === 'group' && (() => {
-              const theme = getGroupTheme(state.currentGroup);
-              return <SongStageScreen key={'g'+state.currentGroup} state={state} dispatch={dispatch}
-                songs={state.songs.filter(s => s.group === state.currentGroup)}
-                voteKey={'group_'+state.currentGroup}
-                groupLabel={theme.emoji + ' ' + theme.name + ' \u2014 Delt\u00e4vling '+(state.currentGroup+1)}
-                groupSub="Titta och r&#246;sta p&#229; en l&#229;t i taget"
-                onFinish={() => dispatch({ type: 'FINISH_GROUP' })}
-                finishLabel="&#128202; Visa resultat!"
-                accent={theme.accent} accentRgb={theme.accentRgb}
-                room={room}
-              />;
-            })()}
-            {state.phase === 'groupRecap' && <GroupRecapScreen state={state} dispatch={dispatch} />}
-            {state.phase === 'groupResults' && <GroupResultsScreen state={state} dispatch={dispatch} />}
-            {state.phase === 'recap' && <RecapScreen state={state} dispatch={dispatch} />}
-            {state.phase === 'final' && (
-              <SongStageScreen key="final" state={state} dispatch={dispatch}
-                songs={state.finalists} voteKey="final"
-                groupLabel="&#11088; FINALEN &#11088;"
-                groupSub={state.finalists.length + ' finalister \u2014 r\u00f6sta en sista g\u00e5ng!'}
-                onFinish={() => dispatch({ type: 'FINISH_FINAL' })}
-                finishLabel="&#127942; Visa vinnaren!"
-                accent="#f59e0b" accentRgb="245,158,11"
-                room={room}
-              />
-            )}
-            {state.phase === 'winner' && <WinnerScreen state={state} dispatch={dispatch} />}
-          </div>
-        </div>
-      );
-    }
-
-    const _game = getGameParam();
-    ReactDOM.createRoot(document.getElementById('root')).render(_game ? <PhoneGame code={_game} /> : <App />);
-  </script>
+  <!-- Built from src/ by build.mjs. Do not edit here: edit src/ and run npm run build. -->
+  <script>
+(()=>{var Le=[12,10,8,6,4,2,1],ln=e=>e<Le.length?Le[e]:0,ut="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",oe=/^[A-HJ-NP-Z2-9]{5}$/,cn=126,je=20,Be=25,Fe=35,fe=[{name:"Eldprovet",emoji:"🔥",tagline:"Bara de tåligaste överlever!",accent:"#ef4444",accentRgb:"239,68,68"},{name:"Neonnatten",emoji:"🌃",tagline:"Musiken som lyser i mörkret",accent:"#3b82f6",accentRgb:"59,130,246"},{name:"Guldrushen",emoji:"⭐",tagline:"Vem tar hem skatten?",accent:"#f59e0b",accentRgb:"245,158,11"},{name:"Rymdresan",emoji:"🚀",tagline:"Till finalen och bortom!",accent:"#a855f7",accentRgb:"168,85,247"}],ie={name:"Finalen",emoji:"🏆",tagline:"Bara de bästa är kvar!",accent:"#f59e0b",accentRgb:"245,158,11"},$=e=>fe[(e%fe.length+fe.length)%fe.length],He=[{stars:5,emoji:"😍",label:"Älskar den!"},{stars:3,emoji:"🙂",label:"Bra"},{stars:1,emoji:"😴",label:"Inte min grej"}];function qe(e){return e?He.reduce((t,n)=>Math.abs(n.stars-e)<Math.abs(t.stars-e)?n:t):null}function Q(e,t=Math.random){let n=[...e];for(let s=n.length-1;s>0;s--){let a=Math.floor(t()*(s+1));[n[s],n[a]]=[n[a],n[s]]}return n}function ee(e="",t=Math.random){return e+Math.floor(t()*36**8).toString(36).padStart(8,"0")+Date.now().toString(36).slice(-4)}function mt(e=Math.random){let t="";for(let n=0;n<5;n++)t+=ut[Math.floor(e()*ut.length)];return t}var pt=e=>(e||"").trim().toLowerCase();function vt(e){if(!e)return null;let t=String(e).trim(),n=t.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)||t.match(/^([a-zA-Z0-9_-]{11})$/);return n?n[1]:null}function gt(e){if(!e)return null;let t=String(e).match(/[?&#](?:t|start)=([0-9hms]+)/);if(!t)return null;let n=t[1];if(/^\d+s?$/.test(n))return parseInt(n,10)||null;let s=n.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);return s&&parseInt(s[1]||"0",10)*3600+parseInt(s[2]||"0",10)*60+parseInt(s[3]||"0",10)||null}function ft(e){if(e==null)return null;let t=String(e).trim(),n=t.match(/^(\d+):(\d{1,2})$/);return n?parseInt(n[1],10)*60+parseInt(n[2],10):(n=t.match(/^(\d+)$/),n?parseInt(n[1],10):null)}function Ke(e){if(e==null)return"";let t=Math.floor(e/60),n=e%60;return t+":"+(n<10?"0":"")+n}function Ue(e){return e&&e.highlightStart>0?e.highlightStart:cn}function ht(e,t){let n=/\s*[([{][^)\]}]*\b(official|video|audio|lyrics?|visuali[sz]er|remaster(?:ed)?|hd|hq|4k|m\/v|mv|music|clip|live|version)\b[^)\]}]*[)\]}]/gi,s=String(e||"").replace(n," ").replace(/\s+(official\s+(music\s+)?video|m\/v|mv)\s*$/i,"").replace(/\s{2,}/g," ").trim(),a=s.match(/^(.+?)\s+[-–—|]\s+(.+)$/);if(a)return{artist:a[1].trim(),title:a[2].trim()};let r=String(t||"").replace(/vevo$/i,"").replace(/\s*-\s*topic$/i,"").replace(/\bofficial\b/gi,"").replace(/\s{2,}/g," ").trim();return{title:s,artist:r}}function be(e){if(e<6)return{groupCount:0,sizes:[]};let t=Math.min(4,Math.floor(e/3)),n=Math.floor(e/t),s=e%t;return{groupCount:t,sizes:Array.from({length:t},(a,r)=>n+(r<s?1:0))}}var U=2;function bt(e,t=Math.random){let{groupCount:n,sizes:s}=be(e.length);if(n===0)return{groupCount:n,songs:Q(e,t).map(m=>({...m,group:-1}))};let a=new Map;for(let m of Q(e,t)){let v=pt(m.pickedBy);a.has(v)||a.set(v,[]),a.get(v).push(m)}let r=[...a.entries()].sort((m,v)=>v[1].length-m[1].length),o=Q(s,t),l=Array(n).fill(0),i=Array.from({length:n},()=>new Map),c=[];for(let[m,v]of r)for(let f of v){let N=-1,T=null;for(let w of Q([...Array(n).keys()],t)){if(l[w]>=o[w])continue;let b=[i[w].get(m)||0,l[w]];(!T||b[0]<T[0]||b[0]===T[0]&&b[1]<T[1])&&(N=w,T=b)}l[N]+=1,i[N].set(m,(i[N].get(m)||0)+1),c.push({...f,group:N})}return{groupCount:n,songs:Q(c,t)}}function he(e,t,n=[]){let s=new Map(n.map((l,i)=>[l,i])),a=new Map;for(let l of e){let i=t[l]||0;a.has(i)||a.set(i,[]),a.get(i).push(l)}let r=[],o=null;for(let l of[...a.keys()].sort((i,c)=>c-i)){let i=a.get(l),c=i.filter(v=>s.has(v)).sort((v,f)=>s.get(v)-s.get(f)),m=i.filter(v=>!s.has(v));r.push(...c,...m),m.length>=2&&!o&&(o={stars:l,options:m,picked:c.length})}return{order:r,question:o}}function Ne(e,t,n){let s={};for(let a of t)s[a]=((e||{})[a]||{})[n]||0;return s}function Nt(e,t,n){return t.every(s=>((e||{})[s]||{})[n]!=null)}function kt(e,t,n,s){let a={};for(let r of t){let{question:o}=he(e,Ne(n,e,r),(s||{})[r]||[]);o&&(a[r]=o)}return a}function Ye(e,t,n=[],s=Math.random){let a=[...n];for(let r=0;r<e.length+1;r++){let{question:o}=he(e,t,a);if(!o)break;a.push(o.options[Math.floor(s()*o.options.length)])}return a}function yt(e,t,n,s,a=Math.random){let r={},o={};for(let f of e)o[f]={songId:f,points:0,stars:0,counts:{}};for(let f of t){let N=Ne(n,e,f),T=(s||{})[f]||[];he(e,N,T).question&&(T=Ye(e,N,T,a));let{order:w}=he(e,N,T);r[f]=w.map((b,C)=>({songId:b,points:ln(C)}));for(let b of r[f])o[b.songId].points+=b.points,o[b.songId].counts[b.points]=(o[b.songId].counts[b.points]||0)+1;for(let b of e)o[b].stars+=N[b]}let l=f=>[f.points,...Le.map(N=>f.counts[N]||0),f.stars],i={};for(let f of e)i[f]=a();let c=(f,N)=>{let T=l(f),w=l(N);for(let b=0;b<T.length;b++)if(T[b]!==w[b])return w[b]-T[b];return 0},m=Object.values(o).sort((f,N)=>c(f,N)||i[N.songId]-i[f.songId]);return{standings:m.map((f,N)=>({songId:f.songId,points:f.points,stars:f.stars,twelves:f.counts[12]||0,tiedAbove:N>0&&c(m[N-1],f)===0})),awards:r,voterIds:[...t]}}function It(e){return e?e.standings.slice(0,U).map(t=>t.songId):[]}function ke(e){let t=[];if(!e)return[{kind:"done",awards:[]}];for(let n of e.voterIds){let s=(e.awards[n]||[]).filter(l=>l.points>0),a=s.filter(l=>l.points<10).sort((l,i)=>l.points-i.points),r=s.find(l=>l.points===10),o=s.find(l=>l.points===12);t.push({kind:"voter",voterId:n,awards:a}),r&&t.push({kind:"ten",voterId:n,awards:[r]}),o&&(t.push({kind:"twelvePending",voterId:n,awards:[]}),t.push({kind:"twelve",voterId:n,awards:[o]}))}return t.push({kind:"done",awards:[]}),t}function Je(e,t,n){let s={};for(let a of n)s[a]=0;for(let a=0;a<=t&&a<e.length;a++)for(let r of e[a].awards)s[r.songId]=(s[r.songId]||0)+r.points;return s}function Tt(e,t){let n=new Map(e.map((s,a)=>[s,a]));return[...e].sort((s,a)=>(t[a]||0)-(t[s]||0)||n.get(s)-n.get(a))}function wt(e,t){return!e||!t||e.points!==t.points?null:t.tiedAbove?"lot":e.twelves!==t.twelves?"twelves":"higher"}function St(e,t){let n={};for(let a of Object.values(t||{}))for(let r of a.standings)n[r.songId]=(n[r.songId]||0)+r.points;let s=new Map;for(let a of e){let r=pt(a.pickedBy);if(!r)continue;let o=s.get(r)||{name:a.pickedBy.trim(),points:0,songs:0};o.points+=n[a.id]||0,o.songs+=1,s.set(r,o)}return[...s.values()].sort((a,r)=>r.points-a.points)}function Et(e,t){if(e<=0)return 0;let{groupCount:n}=be(e);if(n===0)return Math.round(e*4.5+3);let s=n*U,a=e*4.2+e*(je/60)+n*2.5,r=t==="full"?s*(Be/60)+s*4.2+3:s*1.3+3;return Math.round(a+r)}function xt(e){let t=Math.max(5,Math.round(e/5)*5);if(t<60)return"ca "+t+" min";let n=Math.floor(t/60),s=t%60;return"ca "+n+" h"+(s?" "+s+" min":"")}var dn="https://bhurxoknmyfqymtiaycx.supabase.co",un="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodXJ4b2tubXlmcXltdGlheWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzI5NTAsImV4cCI6MjA5NzU0ODk1MH0.YbblDF0jfZNzdIMy8rMF3t19b7b6onD91VVLi9N8kYg",ye=null;function Ie(){if(ye)return ye;try{window.supabase&&window.supabase.createClient&&(ye=window.supabase.createClient(dn,un,{auth:{persistSession:!1}}))}catch(e){console.warn("Supabase init failed",e)}return ye}function Te(e){let t=Ie();return t?t.channel("mello-game-"+e,{config:{broadcast:{ack:!1}}}):null}function we(e){let t=Ie();try{t&&e&&t.removeChannel(e)}catch{}}async function We(e){let t=Ie();if(!t||!e)return null;try{let{data:n,error:s}=await t.rpc("mello_load_game",{p_id:e});return s?(console.warn("loadGame:",s.message),null):n||null}catch(n){return console.warn("loadGame failed",n),null}}async function Rt(e,t){let n=Ie();if(!n||!e)return!1;try{let{error:s}=await n.rpc("mello_save_game",{p_id:e,p_snapshot:t});return s?(console.warn("saveGame:",s.message),!1):!0}catch(s){return console.warn("saveGame failed",s),!1}}function Ct(e){try{return localStorage.getItem(e)}catch{return null}}function Xe(e,t){try{localStorage.setItem(e,t)}catch{}}function Se(e,t){let n=Ct(e);if(n==null)return t;try{return JSON.parse(n)}catch{return t}}function Ee(e,t){Xe(e,JSON.stringify(t))}function At(){let e=Ct("mello_host_game");return(!e||!oe.test(e))&&(e=mt(),Xe("mello_host_game",e)),e}function _t(e){Xe("mello_host_game",e)}function Mt(e){let t=Se("mello_snap",null);return t&&t.code===e?t:null}function Ot(e){Ee("mello_snap",e)}function Vt(){try{let e=new URLSearchParams(window.location.search),t=(e.get("game")||e.get("room")||"").toUpperCase();return oe.test(t)?t:null}catch{return null}}function Ze(){return Se("mello_hof",[])}function Dt(e){let t=Ze();if(t.some(s=>s.gameId===e.gameId))return t;let n=[e,...t].slice(0,50);return Ee("mello_hof",n),n}async function Gt(e){try{let t=await fetch("https://www.youtube.com/oembed?format=json&url="+encodeURIComponent("https://www.youtube.com/watch?v="+e));if(t.ok){let n=await t.json();return{ok:!0,title:n.title||"",author:n.author_name||""}}return t.status===401||t.status===403?{ok:!1,reason:"blocked"}:t.status===400||t.status===404?{ok:!1,reason:"missing"}:{ok:!1,reason:"unknown"}}catch{return{ok:!1,reason:"offline"}}}var Pt=(e,t="mqdefault")=>"https://i.ytimg.com/vi/"+e+"/"+t+".jpg",ze=null;async function se(){try{if(!("wakeLock"in navigator)||document.visibilityState!=="visible"||ze&&!ze.released)return;ze=await navigator.wakeLock.request("screen")}catch{}}var x=null,Y=null,xe=null,Re=(()=>{try{return localStorage.getItem("mello_muted")==="1"}catch{return!1}})();function Lt(){if(!x){let e=window.AudioContext||window.webkitAudioContext;if(!e)return null;x=new e,Y=x.createGain(),Y.gain.value=.5,Y.connect(x.destination)}return x.state==="suspended"&&x.resume().catch(()=>{}),x}function jt(){Lt()}var Bt=()=>Re;function Ft(e){Re=!!e;try{localStorage.setItem("mello_muted",Re?"1":"0")}catch{}}var ae=()=>!Re&&Lt();function le(e,t,n,s,a){e.gain.setValueAtTime(1e-4,t),e.gain.exponentialRampToValueAtTime(s,t+n),e.gain.exponentialRampToValueAtTime(1e-4,t+n+a)}function Qe(e,t,n,{type:s="sine",gain:a=.3,attack:r=.005,dest:o=Y}={}){let l=x.createOscillator(),i=x.createGain();l.type=s,l.frequency.setValueAtTime(e,t),le(i,t,r,a,n),l.connect(i),i.connect(o),l.start(t),l.stop(t+r+n+.05)}function $e(){if(!xe){let t=x.sampleRate*2;xe=x.createBuffer(1,t,x.sampleRate);let n=xe.getChannelData(0);for(let s=0;s<t;s++)n[s]=Math.random()*2-1}let e=x.createBufferSource();return e.buffer=xe,e}function Ce(e=0,t=0){if(!ae())return;let n=x.currentTime+.01+t,s=[784,988,1319][e]||784;Qe(s,n,.9,{gain:.2}),Qe(s*2.01,n,.45,{gain:.06}),Qe(s*3.02,n,.2,{gain:.03})}function et(){if(!ae())return;let e=x.currentTime+.01,t=$e(),n=x.createBiquadFilter();n.type="bandpass",n.Q.value=1.2,n.frequency.setValueAtTime(300,e),n.frequency.exponentialRampToValueAtTime(3500,e+.45);let s=x.createGain();le(s,e,.18,.35,.4),t.connect(n),n.connect(s),s.connect(Y),t.start(e),t.stop(e+.7)}function Ht(e=14){if(!ae())return()=>{};let t=x.currentTime+.02,n=x.createGain();n.gain.setValueAtTime(.12,t),n.gain.linearRampToValueAtTime(.55,t+2.6),n.connect(Y);let s=x.createBiquadFilter();s.type="highpass",s.frequency.value=1100,s.connect(n);let a=[];for(let o=t,l=0;o<t+e;l++){let i=$e(),c=x.createGain();le(c,o,.002,.45+.35*Math.random(),.05),i.connect(c),c.connect(s),i.start(o,Math.random()*1.5,.09),a.push(i),o+=Math.max(.035,.07-.012*(o-t))}let r=!1;return()=>{if(r||!x)return;r=!0;let o=x.currentTime;n.gain.cancelScheduledValues(o),n.gain.setValueAtTime(Math.max(1e-4,n.gain.value),o),n.gain.exponentialRampToValueAtTime(1e-4,o+.06);for(let l of a)try{l.stop(o+.08)}catch{}}}function tt(){if(!ae())return;let e=x.currentTime+.01,t=$e(),n=x.createBiquadFilter();n.type="highpass",n.frequency.value=4500;let s=x.createGain();le(s,e,.004,.5,1.6),t.connect(n),n.connect(s),s.connect(Y),t.start(e),t.stop(e+1.8);let a=x.createOscillator(),r=x.createGain();a.frequency.setValueAtTime(95,e),a.frequency.exponentialRampToValueAtTime(40,e+.5),le(r,e,.005,.6,.55),a.connect(r),r.connect(Y),a.start(e),a.stop(e+.7)}function X(e,t,n,s=.16){let a=x.createGain(),r=x.createBiquadFilter();r.type="lowpass",r.frequency.setValueAtTime(600,t),r.frequency.linearRampToValueAtTime(2600,t+.06),r.frequency.exponentialRampToValueAtTime(1200,t+n),a.gain.setValueAtTime(1e-4,t),a.gain.exponentialRampToValueAtTime(s,t+.03),a.gain.setValueAtTime(s,t+Math.max(.04,n-.08)),a.gain.exponentialRampToValueAtTime(1e-4,t+n+.15),r.connect(a),a.connect(Y);for(let o of[-6,6]){let l=x.createOscillator();l.type="sawtooth",l.frequency.setValueAtTime(e,t),l.detune.value=o,l.connect(r),l.start(t),l.stop(t+n+.2)}}function nt(){if(!ae())return;let e=x.currentTime+.05,t=392,n=523.25,s=659.25,a=784,r=1046.5;X(t,e,.13),X(t,e+.16,.13),X(t,e+.32,.13),[n,s,a].forEach(o=>X(o,e+.48,.8,.11)),X(s,e+1.42,.13),X(a,e+1.58,.13),[n,s,a,r].forEach(o=>X(o,e+1.74,1.3,.09))}function qt(){if(!ae())return;let e=x.currentTime+.02;[523.25,784,1046.5].forEach((t,n)=>X(t,e+n*.09,.22,.1))}var Kt=[{title:"Thriller",artist:"Michael Jackson",youtubeId:"sOnqjkJTMaA",highlightStart:438,year:"1982"},{title:"Smooth Criminal",artist:"Michael Jackson",youtubeId:"h_D3VFfhvs4",highlightStart:250,year:"1988"},{title:"Bohemian Rhapsody",artist:"Queen",youtubeId:"fJ9rUzIMcZQ",highlightStart:180,year:"1975"},{title:"Seven Nation Army",artist:"The White Stripes",youtubeId:"0J2QdDbelmY",highlightStart:20,year:"2003"},{title:"Smells Like Teen Spirit",artist:"Nirvana",youtubeId:"hTWKbfoikeg",highlightStart:33,year:"1991"},{title:"Around the World",artist:"Daft Punk",youtubeId:"LKYPYj2XX80",highlightStart:100,year:"1997"},{title:"Virtual Insanity",artist:"Jamiroquai",youtubeId:"4JkIs37a2JE",highlightStart:60,year:"1996"},{title:"Weapon of Choice",artist:"Fatboy Slim",youtubeId:"wCDIYvFmgW8",highlightStart:70,year:"2001"},{title:"Take On Me",artist:"a-ha",youtubeId:"djV11Xbc914",highlightStart:47,year:"1985"},{title:"Sledgehammer",artist:"Peter Gabriel",youtubeId:"OJWJE0x7T4Q",highlightStart:80,year:"1986"},{title:"Here It Goes Again",artist:"OK Go",youtubeId:"dTAAsCNK7RA",highlightStart:30,year:"2006"},{title:"Feel Good Inc",artist:"Gorillaz",youtubeId:"HyHNuVaZJ-k",highlightStart:45,year:"2005"},{title:"Intergalactic",artist:"Beastie Boys",youtubeId:"qORYO0atB6g",highlightStart:50,year:"1998"},{title:"Uptown Funk",artist:"Mark Ronson ft. Bruno Mars",youtubeId:"OPf0YbXqDm0",highlightStart:60,year:"2014"},{title:"Gangnam Style",artist:"PSY",youtubeId:"9bZkp7q19f0",highlightStart:60,year:"2012"},{title:"Happy",artist:"Pharrell Williams",youtubeId:"ZbZSe6N_BXs",highlightStart:100,year:"2013"}];var ce=2,de={v:ce,gameId:null,phase:"setup",songs:[],voters:[],settings:{finalMode:"highlights"},groupCount:0,currentGroup:0,round:null,currentSongIndex:0,finalists:[],votes:{},picks:{},roundVoters:{},results:{},reveal:{step:-1},recap:{index:0,playing:!1}},ne=e=>e==="final";function j(e,t=e.round){if(!t)return[];if(ne(t))return e.finalists;let n=parseInt(t.split("_")[1],10);return e.songs.filter(s=>s.group===n).map(s=>s.id)}function Z(e){let t={};for(let n of e.songs)t[n.id]=n;return t}function at(e,t=e.round){return ne(t)?ie:$(e.currentGroup)}function rt(e,t=e.round){return t?ne(t)?"Finalen":$(parseInt(t.split("_")[1],10)).name:""}function st(e){return ke(e.results[e.round])}function te(e){let t=e.round,n=j(e,t),s=(e.roundVoters[t]||[]).filter(a=>e.voters.some(r=>r.id===a));return kt(n,s,e.votes[t],e.picks[t])}function Ae(e,t=e.round){let n=j(e,t);return e.voters.filter(s=>Nt(e.votes[t],n,s.id)).map(s=>s.id)}function zt(e,t){let n=e.round,s=yt(j(e,n),e.roundVoters[n]||[],e.votes[n],e.picks[n],t);s.voterNames={};for(let a of e.voters)s.voterIds.includes(a.id)&&(s.voterNames[a.id]=a.name);return{...e,phase:"reveal",results:{...e.results,[n]:s},reveal:{step:-1}}}function Ut(e,t){let n=e.round,s={...e,roundVoters:{...e.roundVoters,[n]:Ae(e,n)}};return Object.keys(te(s)).length?{...s,phase:"tiebreak"}:zt(s,t)}function Yt(e,t){return Object.keys(te(e)).length?e:zt(e,t)}function Jt(e,t){return{...de,songs:t.map(n=>({...n,group:-1})),voters:e.voters,settings:e.settings}}function ot(e,t){let n=t.rng||Math.random;switch(t.type){case"ADD_SONG":{let s=t.song;return!s||!s.youtubeId||!s.title||e.songs.some(a=>a.youtubeId===s.youtubeId)?e:{...e,songs:[...e.songs,{...s,id:t.id||ee("s",n),group:-1}]}}case"UPDATE_SONG":return{...e,songs:e.songs.map(s=>s.id===t.id?{...s,...t.patch}:s)};case"REMOVE_SONG":return{...e,songs:e.songs.filter(s=>s.id!==t.id)};case"LOAD_DEMO":return{...e,songs:Kt.map((s,a)=>({...s,id:"demo"+a,group:-1}))};case"CLEAR_SONGS":return{...e,songs:[]};case"ADD_VOTER":{let s=String(t.name||"").trim().slice(0,24);if(!s)return e;let a=t.id||ee("v",n);if(e.voters.find(o=>o.id===a)){let o={name:s};return t.simple!=null&&(o.simple=!!t.simple),{...e,voters:e.voters.map(l=>l.id===a?{...l,...o}:l)}}return{...e,voters:[...e.voters,{id:a,name:s,simple:!!t.simple,phone:!!t.phone}]}}case"REMOVE_VOTER":return{...e,voters:e.voters.filter(s=>s.id!==t.id)};case"SET_VOTER":return{...e,voters:e.voters.map(s=>s.id===t.id?{...s,...t.patch}:s)};case"SET_SETTING":return{...e,settings:{...e.settings,[t.key]:t.value}};case"START_TOURNAMENT":{if(e.songs.length<4||e.voters.length<1)return e;let{groupCount:s,songs:a}=bt(e.songs,n),r={...e,gameId:ee("g",n),songs:a,groupCount:s,currentGroup:0,currentSongIndex:0,votes:{},picks:{},roundVoters:{},results:{},reveal:{step:-1},recap:{index:0,playing:!1}};return s===0?{...r,phase:"finalIntro",round:"final",finalists:a.map(o=>o.id)}:{...r,phase:"groupIntro",round:"group_0",finalists:[]}}case"START_ROUND":return e.phase==="groupIntro"?{...e,phase:"group",currentSongIndex:0}:e.phase==="finalIntro"?e.groupCount>0&&e.settings.finalMode==="full"?{...e,phase:"recap",recap:{index:0,playing:!0}}:{...e,phase:"final",currentSongIndex:0}:e;case"SET_CURRENT_SONG":{let s=j(e).length;return{...e,currentSongIndex:Math.max(0,Math.min(s-1,t.index))}}case"SET_VOTE":{let{round:s,songId:a,voterId:r}=t,o=Math.round(Number(t.stars));if(s!==e.round||e.phase!=="group"&&e.phase!=="final"||!(o>=1&&o<=5)||!j(e,s).includes(a)||!e.voters.some(i=>i.id===r))return e;let l={...e.votes[s]||{}};return l[a]={...l[a]||{},[r]:o},{...e,votes:{...e.votes,[s]:l}}}case"FINISH_VOTING":return Ae(e).length===0?e:e.phase==="group"?{...e,phase:"groupRecap",recap:{index:0,playing:!0}}:e.phase==="final"?Ut(e,n):e;case"RECAP_SET":return{...e,recap:{...e.recap,...t.patch}};case"RECAP_DONE":return e.phase==="groupRecap"?Ut(e,n):e.phase==="recap"?{...e,phase:"final",currentSongIndex:0,recap:{index:0,playing:!1}}:e;case"TIEBREAK_PICK":{if(e.phase!=="tiebreak"||t.round!==e.round)return e;let s=te(e)[t.voterId];if(!s||!s.options.includes(t.songId))return e;let a={...e.picks[e.round]||{}};return a[t.voterId]=[...a[t.voterId]||[],t.songId],Yt({...e,picks:{...e.picks,[e.round]:a}},n)}case"TIEBREAK_RANDOM":{if(e.phase!=="tiebreak"||t.round!==e.round)return e;let s=te(e),a=t.voterId?[t.voterId].filter(l=>s[l]):Object.keys(s);if(!a.length)return e;let r=j(e),o={...e.picks[e.round]||{}};for(let l of a)o[l]=Ye(r,Ne(e.votes[e.round],r,l),o[l]||[],n);return Yt({...e,picks:{...e.picks,[e.round]:o}},n)}case"REVEAL_STEP":{if(e.phase!=="reveal")return e;let s=st(e).length;return{...e,reveal:{step:Math.max(-1,Math.min(s-1,t.step))}}}case"REVEAL_PRESS":{if(e.phase!=="reveal")return e;let a=st(e)[e.reveal.step];return!a||a.kind!=="twelvePending"||a.voterId!==t.voterId?e:{...e,reveal:{step:e.reveal.step+1}}}case"REVEAL_DONE":{if(e.phase!=="reveal")return e;if(ne(e.round))return{...e,phase:"winner"};let s=e.currentGroup+1;if(s<e.groupCount)return{...e,phase:"groupIntro",currentGroup:s,round:"group_"+s,currentSongIndex:0,reveal:{step:-1}};let a=[];for(let r=0;r<e.groupCount;r++)a.push(...It(e.results["group_"+r]));return{...e,phase:"finalIntro",round:"final",finalists:Q(a,n),currentSongIndex:0,reveal:{step:-1}}}case"END_GAME":return Jt(e,e.songs);case"NEW_GAME":return Jt(e,[]);case"RESTORE":return t.snapshot&&t.snapshot.v===ce?{...de,...pn(t.snapshot)}:e;default:return e}}function pn(e){let{savedAt:t,...n}=e;return n}function Wt(e){let t=e.voters.map(r=>({id:r.id,name:r.name,simple:!!r.simple})),n={phase:e.phase,round:e.round,label:rt(e),voters:t},s=Z(e),a=r=>{let o=s[r]||{};return{id:r,title:o.title||"",artist:o.artist||"",youtubeId:o.youtubeId||"",pickedBy:o.pickedBy||""}};if(e.phase==="group"||e.phase==="final"){let r=j(e);if(r.length){let o=Math.min(e.currentSongIndex,r.length-1),l={};for(let i of r)l[i]={...(e.votes[e.round]||{})[i]||{}};return{...n,kind:"vote",song:a(r[o]),songIndex:o,songCount:r.length,songIds:r,votes:l}}}if(e.phase==="tiebreak"){let r={};for(let[o,l]of Object.entries(te(e)))r[o]={stars:l.stars,again:l.picked>0,options:l.options.map(a)};return{...n,kind:"tiebreak",questions:r}}if(e.phase==="reveal"){let r=st(e),o=e.reveal.step>=0?r[e.reveal.step]:null;return{...n,kind:"reveal",started:e.reveal.step>=0,beat:o?{kind:o.kind,voterId:o.voterId||null}:null}}return{...n,kind:"wait"}}var{useEffect:vn,useRef:_e,useState:Xt}=React,Me=null;function gn(){return window.YT&&window.YT.Player?Promise.resolve(window.YT):(Me||(Me=new Promise((e,t)=>{let n=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{n&&n(),e(window.YT)};let s=document.createElement("script");s.src="https://www.youtube.com/iframe_api",s.async=!0,s.onerror=()=>{Me=null,t(new Error("YouTube API failed to load"))},document.head.appendChild(s)})),Me)}var fn=1,hn=0,bn={2:"Länken till videon verkar vara fel.",5:"Videon kunde inte spelas i den här webbläsaren.",100:"Videon finns inte längre (borttagen eller privat).",101:"Den här videon får bara spelas på YouTube.",150:"Den här videon får bara spelas på YouTube.",api:"Kunde inte ladda YouTube. Kontrollera nätet."};function it({videoId:e,start:t,end:n,autoplay:s,onTick:a,onEnded:r,onError:o}){let l=_e(null),i=_e(null),c=_e({});c.current={onTick:a,onEnded:r,onError:o};let m=_e(s);m.current=s;let[v,f]=Xt(null),[N,T]=Xt(!1);return vn(()=>{let w=!0,b=null,C=null,A=!!m.current;return f(null),T(!1),gn().then(k=>{if(!w||!l.current)return;let I=document.createElement("div");l.current.innerHTML="",l.current.appendChild(I);let h={rel:0,modestbranding:1,playsinline:1,autoplay:A?1:0,origin:window.location.origin};t>0&&(h.start=Math.floor(t)),n>0&&(h.end=Math.floor(n)),i.current=new k.Player(I,{width:"100%",height:"100%",videoId:e,playerVars:h,events:{onReady:u=>{if(A){try{u.target.playVideo()}catch{}C=setTimeout(()=>{try{let R=u.target.getPlayerState();w&&R!==1&&R!==3&&T(!0)}catch{}},4e3)}},onStateChange:u=>{u.data===fn&&T(!1),u.data===hn&&c.current.onEnded&&c.current.onEnded()},onError:u=>{w&&(f(u.data),c.current.onError&&c.current.onError(u.data))}}}),b=setInterval(()=>{let u=i.current;if(!(!u||!u.getCurrentTime||!c.current.onTick))try{c.current.onTick(u.getCurrentTime(),u.getPlayerState())}catch{}},250)}).catch(()=>{w&&(f("api"),c.current.onError&&c.current.onError("api"))}),()=>{w=!1,clearInterval(b),clearTimeout(C);try{i.current&&i.current.destroy()}catch{}i.current=null}},[e,t,n]),React.createElement("div",{className:"video-wrap"},React.createElement("div",{ref:l,className:"yt-host"}),v!=null&&React.createElement("div",{className:"video-error"},React.createElement("div",{style:{fontSize:"2rem"}},"📼"),React.createElement("div",null,bn[v]||"Videon kunde inte spelas."),React.createElement("a",{className:"btn btn-ghost btn-sm",href:"https://www.youtube.com/watch?v="+e,target:"_blank",rel:"noopener noreferrer"},"Öppna på YouTube")),N&&v==null&&React.createElement("div",{className:"video-hint"},"Tryck ▶ på videon för att starta"))}var{useEffect:Nn,useRef:kn,useState:Zt}=React;function yn({value:e,onChange:t,big:n}){let[s,a]=Zt(0);return React.createElement("div",{className:"stars"+(n?" stars-big":""),role:"radiogroup","aria-label":"Betyg"},[1,2,3,4,5].map(r=>React.createElement("button",{key:r,type:"button",className:"star"+(r<=(s||e)?" active":""),onClick:()=>t(r),onMouseEnter:()=>a(r),onMouseLeave:()=>a(0),"aria-label":r+" stjärnor"},"⭐")))}function In({value:e,onChange:t,big:n}){let s=qe(e);return React.createElement("div",{className:"emoji-rating"+(n?" emoji-big":"")},He.map(a=>React.createElement("button",{key:a.stars,type:"button",className:"emoji-btn"+(s&&s.stars===a.stars?" active":""),onClick:()=>t(a.stars),"aria-label":a.label},React.createElement("span",{className:"emoji-face"},a.emoji),n&&React.createElement("span",{className:"emoji-label"},a.label))))}function Oe({simple:e,value:t,onChange:n,big:s}){return e?React.createElement(In,{value:t,onChange:n,big:s}):React.createElement(yn,{value:t,onChange:n,big:s})}function Ve({stars:e,simple:t}){if(t){let n=qe(e);return React.createElement("span",null,n?n.emoji:"")}return React.createElement("span",{className:"stars-text"},"⭐".repeat(Math.max(0,e||0)))}function q({videoId:e,className:t,alt:n}){let[s,a]=Zt(!1);return!e||s?React.createElement("div",{className:"thumb thumb-empty "+(t||"")},"🎵"):React.createElement("img",{className:"thumb "+(t||""),src:Pt(e),alt:n||"",loading:"lazy",onError:()=>a(!0)})}function ue({accent:e,count:t=10}){let n=kn(Array.from({length:t},()=>({left:Math.random()*100+"%",size:3+Math.random()*5,dur:7+Math.random()*8+"s",delay:Math.random()*6+"s"}))).current,s=e||"var(--pink)";return React.createElement("div",{className:"particles","aria-hidden":"true"},n.map((a,r)=>React.createElement("div",{key:r,className:"particle",style:{left:a.left,width:a.size,height:a.size,background:s,"--dur":a.dur,"--delay":a.delay}})))}function De({accent:e}){return React.createElement("div",{className:"stage-lights","aria-hidden":"true"},[{left:"10%",rotate:"8deg",delay:"0s"},{left:"32%",rotate:"-5deg",delay:"1.2s"},{left:"58%",rotate:"3deg",delay:"0.6s"},{left:"82%",rotate:"-7deg",delay:"1.8s"}].map((n,s)=>React.createElement("div",{key:s,className:"stage-light",style:{left:n.left,transform:"rotate("+n.rotate+")","--light-color":e||"rgba(236,72,153,0.15)",animationDelay:n.delay}})))}function Ge(e=4e3){if(!window.confetti)return;let t=Date.now()+e,n=["#f59e0b","#ec4899","#7c3aed","#3b82f6","#10b981"],s=setInterval(()=>{window.confetti({particleCount:5,angle:60,spread:55,origin:{x:0},colors:n}),window.confetti({particleCount:5,angle:120,spread:55,origin:{x:1},colors:n}),Date.now()>t&&clearInterval(s)},60)}function Qt(){window.confetti&&window.confetti({particleCount:70,spread:75,origin:{y:.6},colors:["#f59e0b","#ec4899","#7c3aed"]})}function me(e,t){Nn(()=>{let n=s=>{let a=s.target&&s.target.tagName||"";a==="INPUT"||a==="TEXTAREA"||a==="SELECT"||s.metaKey||s.ctrlKey||s.altKey||e(s)};return window.addEventListener("keydown",n),()=>window.removeEventListener("keydown",n)},t)}var{useState:_,useReducer:Tn,useEffect:P,useRef:pe,useMemo:en}=React,lt=e=>e===0?"🥇":e===1?"🥈":e===2?"🥉":String(e+1);function ve({emoji:e,after:t,children:n}){return React.createElement("div",{className:"group-label"},e&&React.createElement("span",{className:"gl-emoji"},e),React.createElement("span",{className:"gl-text"},n),t&&React.createElement("span",{className:"gl-emoji after"},t))}function wn(e,t,n){let[s,a]=_(n.code),[r,o]=_(!1),[l,i]=_(!1),[c,m]=_(n.snap&&n.snap.phase!=="setup"?"Välkommen tillbaka! Ni fortsätter där ni slutade.":null),v=pe(null),f=Wt(e),N=pe(f);N.current=f;let T=JSON.stringify(f),w=(k,I)=>{v.current&&v.current.send({type:"broadcast",event:k,payload:I})};P(()=>{let k=!0;return We(n.code).then(I=>{if(!k)return;let h=n.snap&&n.snap.savedAt||0;I&&I.v===ce&&(I.savedAt||0)>h&&(t({type:"RESTORE",snapshot:I}),I.phase!=="setup"&&m("Spelet hämtades från molnet. Ni fortsätter där ni slutade.")),i(!0)}),()=>{k=!1}},[]);let b=JSON.stringify(e);return P(()=>{let k={...e,code:s,savedAt:Date.now()};if(Ot(k),!l)return;let I=setTimeout(()=>Rt(s,k),1200);return()=>clearTimeout(I)},[b,s,l]),P(()=>{let k=Te(s);if(!k)return;let I=(h,u)=>k.on("broadcast",{event:h},({payload:R})=>{R&&u(R)});return I("vote",h=>t({type:"SET_VOTE",round:h.round,songId:h.songId,voterId:h.voterId,stars:h.stars})),I("register",h=>{h.id&&h.name&&t({type:"ADD_VOTER",id:String(h.id).slice(0,40),name:String(h.name),simple:!!h.simple,phone:!0})}),I("unregister",h=>{h.id&&t({type:"REMOVE_VOTER",id:h.id})}),I("tiebreak_pick",h=>t({type:"TIEBREAK_PICK",round:h.round,voterId:h.voterId,songId:h.songId})),I("tiebreak_random",h=>{h.voterId&&t({type:"TIEBREAK_RANDOM",round:h.round,voterId:h.voterId})}),I("reveal_press",h=>t({type:"REVEAL_PRESS",voterId:h.voterId})),k.on("broadcast",{event:"hello"},()=>w("ballot",N.current)),k.subscribe(h=>{let u=h==="SUBSCRIBED";o(u),u&&(w("ballot",N.current),w("rollcall",{}))}),v.current=k,()=>{we(k),v.current=null,o(!1)}},[s]),P(()=>{r&&w("ballot",N.current)},[T,r]),{code:s,connected:r,toast:c,clearToast:()=>m(null),kick:k=>w("kick",{id:k}),switchGame:async k=>{let I=String(k||"").trim().toUpperCase();if(!oe.test(I))return"Koden ska vara fem tecken.";let h=await We(I);return!h||h.v!==ce?"Hittade inget spel med den koden.":(_t(I),t({type:"RESTORE",snapshot:h}),a(I),m("Spel "+I+" hämtat. Ni fortsätter där ni slutade."),null)}}}function tn(){let[e]=_(()=>{let v=At();return{code:v,snap:Mt(v)}}),[t,n]=Tn(ot,e.snap,v=>v?ot(de,{type:"RESTORE",snapshot:v}):de),s=wn(t,n,e),[a,r]=_(Bt()),o=()=>{Ft(!a),r(!a)},l=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch{}},i=()=>{window.confirm("Avsluta spelet? Låtarna och röstarna finns kvar, men alla röster nollställs.")&&n({type:"END_GAME"})},c={state:t,dispatch:n,room:s},m=null;switch(t.phase){case"setup":m=React.createElement(xn,{...c});break;case"groupIntro":m=React.createElement($t,{...c});break;case"finalIntro":m=React.createElement($t,{...c});break;case"group":case"final":m=React.createElement(Rn,{key:t.round,...c});break;case"groupRecap":case"recap":m=React.createElement(Cn,{key:t.phase+t.round,...c});break;case"tiebreak":m=React.createElement(An,{...c});break;case"reveal":m=React.createElement(_n,{key:t.round,...c});break;case"winner":m=React.createElement(Vn,{...c});break;default:m=null}return React.createElement("div",{className:"container"},React.createElement("header",{className:"header"},React.createElement("div",{className:"logo"},"Familje-Mello"),React.createElement("div",{className:"logo-sub"},"Familjens egen musiktävling"),React.createElement("div",{className:"header-tools"},React.createElement("button",{className:"icon-btn",onClick:o,title:a?"Slå på ljudeffekter":"Stäng av ljudeffekter"},a?"🔇":"🔊"),React.createElement("button",{className:"icon-btn",onClick:l,title:"Helskärm"},"⛶"),t.phase!=="setup"&&React.createElement("button",{className:"icon-btn",onClick:i,title:"Avsluta spelet"},"⏹"))),s.toast&&React.createElement(Sn,{text:s.toast,onClose:s.clearToast}),t.phase!=="setup"&&React.createElement(En,{state:t}),React.createElement("main",{className:"main"},m))}function Sn({text:e,onClose:t}){return P(()=>{let n=setTimeout(t,6e3);return()=>clearTimeout(n)},[e]),React.createElement("div",{className:"toast",onClick:t},e)}function En({state:e}){let t=[];for(let s=0;s<e.groupCount;s++)t.push({key:"group_"+s,label:$(s).emoji+" Delt. "+(s+1)});t.push({key:"final",label:"🏆 Final"});let n=e.phase==="winner"?t.length:t.findIndex(s=>s.key===e.round);return React.createElement("div",{className:"phase-indicator"},t.map((s,a)=>React.createElement("span",{key:s.key,className:"phase-dot"+(a===n?" active":"")+(a<n?" completed":"")},a<n?"✓ ":"",s.label)))}function nn({code:e,connected:t,phoneCount:n,compact:s}){let[a,r]=_(!s),o=window.location.origin+window.location.pathname+"?game="+e,l=en(()=>{try{if(!window.qrcode)return null;let i=window.qrcode(0,"M");return i.addData(o),i.make(),i.createDataURL(6,12)}catch{return null}},[o]);return e?s&&!a?React.createElement("button",{className:"vote-bar",onClick:()=>r(!0)},React.createElement("span",null,"📱 Rösta i mobilen · kod ",React.createElement("b",null,e)," · ",n," ",n===1?"mobil":"mobiler"),React.createElement("span",{className:"live-dot"+(t?" on":"")}),React.createElement("span",{className:"vote-bar-more"},"visa QR ▾")):React.createElement("div",{className:"card vote-panel"},React.createElement("div",{className:"flex-between"},React.createElement("div",{className:"card-title",style:{marginBottom:0}},"📱 Rösta i mobilen",React.createElement("span",{className:"live-dot"+(t?" on":""),title:t?"Ansluten":"Ansluter…"})),s&&React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>r(!1)},"Dölj ▴")),React.createElement("div",{className:"vote-panel-body"},l&&React.createElement("img",{className:"vote-panel-qr",src:l,alt:"QR-kod till spelet"}),React.createElement("div",{className:"vote-panel-info"},React.createElement("div",{className:"muted small"},"Skanna koden eller gå till"),React.createElement("div",{className:"vote-panel-url"},o.replace(/^https?:\/\//,"")),React.createElement("div",{className:"muted small",style:{marginTop:12}},"Spelkod"),React.createElement("div",{className:"room-code"},e)))):null}function xn({state:e,dispatch:t,room:n}){let[s,a]=_(""),[r,o]=_(""),[l,i]=_(""),[c,m]=_(""),[v,f]=_(""),[N,T]=_(null),[w,b]=_(""),[C,A]=_(""),[k,I]=_(""),[h,u]=_(""),[R,B]=_(!1),[K]=_(()=>Ze()),D=pe({title:!1,artist:!1,highlight:!1}),F=vt(s);P(()=>{if(!F){T(null);return}let d=!0;T({status:"loading"});let W=gt(s);W&&!D.current.highlight&&f(Ke(W));let on=setTimeout(async()=>{let re=await Gt(F);if(d)if(re.ok){let dt=ht(re.title,re.author);T({status:"ok",raw:re.title}),D.current.title||o(dt.title),D.current.artist||i(dt.artist)}else T({status:re.reason})},250);return()=>{d=!1,clearTimeout(on)}},[F]);let S=()=>{a(""),o(""),i(""),f(""),b(""),T(null),D.current={title:!1,artist:!1,highlight:!1}},V=()=>{if(!F)return b("Klistra in en YouTube-länk.");if(N&&N.status==="blocked")return b('Den här videon får bara spelas på YouTube. Sök upp en annan uppladdning av låten, till exempel en "lyric video".');if(N&&N.status==="missing")return b("Hittar ingen video med den länken.");if(e.songs.some(d=>d.youtubeId===F))return b("Den låten är redan med.");if(!r.trim())return b("Skriv låtens titel.");t({type:"ADD_SONG",song:{title:r.trim(),artist:l.trim(),youtubeId:F,highlightStart:ft(v),pickedBy:c.trim()}}),S()},L=()=>{C.trim()&&(t({type:"ADD_VOTER",name:C.trim()}),A(""))},p=d=>{t({type:"REMOVE_VOTER",id:d.id}),d.phone&&n.kick(d.id)},y=async()=>{u("Letar…");let d=await n.switchGame(k);u(d||""),d||(B(!1),I(""))},g=d=>W=>{W.key==="Enter"&&d()},E=e.songs.length,M=be(E),G=E>=4&&e.voters.length>=1,O=[...new Set([...e.voters.map(d=>d.name),...e.songs.map(d=>d.pickedBy).filter(Boolean)])],H=e.voters.filter(d=>d.phone).length,z={loading:React.createElement("span",{className:"muted"},"Letar efter videon…"),ok:React.createElement("span",{className:"ok"},"✓ ",N&&N.raw),blocked:React.createElement("span",{className:"err"},"✕ Den här videon får bara spelas på YouTube. Välj en annan uppladdning."),missing:React.createElement("span",{className:"err"},"✕ Hittar ingen video med den länken.")}[N&&N.status];return React.createElement("div",{className:"animate-in"},React.createElement(nn,{code:n.code,connected:n.connected,phoneCount:H}),E===0&&React.createElement("div",{className:"demo-banner"},React.createElement("p",null,"Vill ni testköra? Ladda 16 klassiker med häftiga musikvideor (1975 till 2014)."),React.createElement("button",{className:"btn btn-blue btn-sm",onClick:()=>t({type:"LOAD_DEMO"})},"🎵 Ladda demolåtar")),React.createElement("div",{className:"card"},React.createElement("div",{className:"card-title"},"🎵 Lägg till låtar"),React.createElement("div",{className:"input-row"},React.createElement("input",{className:"input",placeholder:"Klistra in en YouTube-länk",value:s,onChange:d=>a(d.target.value),onKeyDown:g(V)})),z&&React.createElement("div",{className:"lookup-line"},z),React.createElement("div",{className:"input-row"},React.createElement("input",{className:"input",placeholder:"Titel",value:r,onChange:d=>{D.current.title=!0,o(d.target.value)},onKeyDown:g(V)}),React.createElement("input",{className:"input",placeholder:"Artist (valfritt)",value:l,onChange:d=>{D.current.artist=!0,i(d.target.value)},onKeyDown:g(V)})),React.createElement("div",{className:"input-row"},React.createElement("input",{className:"input",list:"mello-pickers",placeholder:"Vem valde låten? (valfritt)",value:c,onChange:d=>m(d.target.value),onKeyDown:g(V)}),React.createElement("input",{className:"input",placeholder:"Bästa stället, t.ex. 1:05 (valfritt)",value:v,onChange:d=>{D.current.highlight=!0,f(d.target.value)},onKeyDown:g(V)}),React.createElement("button",{className:"btn btn-primary btn-sm",onClick:V},"+ Lägg till")),React.createElement("datalist",{id:"mello-pickers"},O.map(d=>React.createElement("option",{key:d,value:d}))),React.createElement("div",{className:"muted small"},'Tips: dela länken från YouTube med "Starta vid" så blir det bästa stället highlight i recapen.'),w&&React.createElement("div",{className:"err",style:{marginTop:8}},w),E>0&&React.createElement("div",{style:{marginTop:16}},React.createElement("div",{className:"flex-between",style:{marginBottom:8}},React.createElement("span",{className:"muted small"},E," låtar"),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>{window.confirm("Ta bort alla låtar?")&&t({type:"CLEAR_SONGS"})}},"Rensa")),e.songs.map((d,W)=>React.createElement("div",{key:d.id,className:"song-item"},React.createElement("div",{className:"song-number"},W+1),React.createElement(q,{videoId:d.youtubeId,className:"song-thumb"}),React.createElement("div",{className:"song-info"},React.createElement("div",{className:"song-title"},d.title),React.createElement("div",{className:"song-artist"},d.artist,d.year?" ("+d.year+")":""),React.createElement("div",{className:"song-meta"},d.pickedBy?"Vald av "+d.pickedBy:"",d.pickedBy&&d.highlightStart!=null?" · ":"",d.highlightStart!=null?"Highlight "+Ke(d.highlightStart):"")),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>t({type:"REMOVE_SONG",id:d.id}),"aria-label":"Ta bort "+d.title},"✕"))))),React.createElement("div",{className:"card"},React.createElement("div",{className:"card-title"},"👨‍👩‍👧‍👦 Röstare"),React.createElement("div",{className:"input-row"},React.createElement("input",{className:"input",placeholder:"Namn",value:C,maxLength:24,onChange:d=>A(d.target.value),onKeyDown:g(L)}),React.createElement("button",{className:"btn btn-primary btn-sm",onClick:L},"+ Lägg till")),e.voters.length>0&&React.createElement("div",{className:"voter-tags"},e.voters.map(d=>React.createElement("span",{key:d.id,className:"tag"},d.phone&&React.createElement("span",{title:"Röstar i mobilen"},"📱"),d.name,React.createElement("button",{className:"tag-btn",title:d.simple?"Barnläge: tre stora knappar. Tryck för stjärnor.":"Stjärnor. Tryck för barnläge (tre stora knappar).",onClick:()=>t({type:"SET_VOTER",id:d.id,patch:{simple:!d.simple}})},d.simple?"👶":"⭐"),React.createElement("button",{className:"tag-btn",title:"Ta bort",onClick:()=>p(d)},"✕")))),React.createElement("div",{className:"muted small",style:{marginTop:10}},"Tryck ⭐ eller 👶 för att växla mellan stjärnor och barnläge med tre stora knappar: 😍 🙂 😴.")),React.createElement("div",{className:"card"},React.createElement("div",{className:"card-title"},"🏁 Finalen"),React.createElement("div",{className:"segmented"},React.createElement("button",{className:e.settings.finalMode!=="full"?"active":"",onClick:()=>t({type:"SET_SETTING",key:"finalMode",value:"highlights"})},"⚡ Snabbfinal"),React.createElement("button",{className:e.settings.finalMode==="full"?"active":"",onClick:()=>t({type:"SET_SETTING",key:"finalMode",value:"full"})},"🎬 Hela låtarna")),React.createElement("div",{className:"muted small",style:{marginTop:10}},e.settings.finalMode==="full"?"Finalisterna visas först i ett klipp-recap och sedan varje låt i sin helhet innan ni röstar.":"Finalisterna visas med ett klipp på "+Fe+" sekunder var, sedan röstar ni. Ni har ju redan sett låtarna."),E>=4&&React.createElement("div",{className:"plan-line"},M.groupCount===0?E+" låtar: alla går direkt till finalen.":E+" låtar: "+M.groupCount+" deltävlingar med "+M.sizes.join("/")+" låtar, "+M.groupCount*U+" till finalen."," Speltid "+xt(Et(E,e.settings.finalMode))+". Spelet sparas, så ni kan pausa och fortsätta en annan dag.")),React.createElement("div",{className:"text-center mt-24"},React.createElement("button",{className:"btn btn-gold btn-lg",disabled:!G,onClick:()=>t({type:"START_TOURNAMENT"})},"✨ Starta Familje-Mello! ✨"),!G&&React.createElement("div",{className:"muted small",style:{marginTop:12}},"Lägg till minst 4 låtar och 1 röstare")),K.length>0&&React.createElement("div",{className:"card mt-24"},React.createElement("div",{className:"card-title"},"🏆 Tidigare vinnare"),K.slice(0,10).map(d=>React.createElement("div",{key:d.gameId,className:"hof-row"},React.createElement("span",{className:"hof-date"},d.date),React.createElement("span",{className:"hof-song"},React.createElement("b",null,d.title),d.artist?" · "+d.artist:""),d.pickedBy&&React.createElement("span",{className:"muted small"},"vald av ",d.pickedBy)))),React.createElement("div",{className:"text-center mt-16"},R?React.createElement("div",{className:"card join-card"},React.createElement("div",{className:"muted small",style:{marginBottom:8}},"Skriv spelkoden från den andra datorn."),React.createElement("div",{className:"input-row",style:{justifyContent:"center"}},React.createElement("input",{className:"input code-input",maxLength:5,placeholder:"ABCDE",value:k,onChange:d=>I(d.target.value.toUpperCase()),onKeyDown:g(y)}),React.createElement("button",{className:"btn btn-blue btn-sm",onClick:y},"Hämta spelet")),h&&React.createElement("div",{className:"muted small"},h)):React.createElement("button",{className:"link-btn",onClick:()=>B(!0)},"Fortsätta ett spel från en annan dator?")))}function $t({state:e,dispatch:t}){let n=e.phase==="finalIntro",s=n?ie:$(e.currentGroup),a=Z(e),r=j(e);P(()=>{et();let i=setTimeout(qt,350);return()=>clearTimeout(i)},[e.round]),me(i=>{(i.key==="Enter"||i.key===" ")&&(i.preventDefault(),t({type:"START_ROUND"}))},[e.round]);let o=n?e.groupCount===0?"Direkt till final":r.length+" finalister":"Deltävling "+(e.currentGroup+1)+" av "+e.groupCount,l=n&&e.groupCount>0&&e.settings.finalMode!=="full";return React.createElement("div",{className:"intro-screen"},React.createElement(ue,{accent:s.accent}),React.createElement(De,{accent:s.accent}),React.createElement("div",{style:{position:"relative",zIndex:1,width:"100%",display:"flex",flexDirection:"column",alignItems:"center"}},React.createElement("div",{className:"intro-badge",style:{background:"rgba("+s.accentRgb+",0.15)",color:s.accent,border:"1px solid rgba("+s.accentRgb+",0.3)"}},o),React.createElement("div",{className:"intro-emoji"},s.emoji),React.createElement("div",{className:"intro-title"},s.name),React.createElement("div",{className:"intro-theme"},l?"Snabbfinal: ett klipp per låt, sedan röstar ni!":s.tagline),React.createElement("div",{className:"intro-songs"},r.map((i,c)=>{let m=a[i];return React.createElement("div",{key:i,className:"intro-song-pill",style:{animationDelay:.8+c*.15+"s"}},React.createElement("div",{className:"intro-song-num",style:{background:"rgba("+s.accentRgb+",0.2)",color:s.accent}},c+1),React.createElement("div",{className:"intro-song-info"},React.createElement("div",{className:"intro-song-title"},m.title),React.createElement("div",{className:"intro-song-artist"},m.artist,m.pickedBy?" · vald av "+m.pickedBy:"")))})),React.createElement("div",{className:"intro-start-btn"},React.createElement("button",{className:"btn btn-lg",style:{background:"linear-gradient(135deg, "+s.accent+", var(--purple))",color:"white"},onClick:()=>t({type:"START_ROUND"})},"Kör igång!"))))}function Rn({state:e,dispatch:t,room:n}){let s=ne(e.round),a=at(e),r=j(e),o=Z(e),l=Math.min(e.currentSongIndex,r.length-1),i=o[r[l]],c=e.votes[e.round]||{},m=(u,R)=>(c[u]||{})[R]!=null,v=u=>e.voters.every(R=>m(u,R.id)),f=r.every(v),N=Ae(e),T=e.voters.filter(u=>!N.includes(u.id)),[w,b]=_(null);P(()=>b(null),[l]);let C=u=>t({type:"SET_CURRENT_SONG",index:u});me(u=>{u.key==="ArrowRight"&&C(l+1),u.key==="ArrowLeft"&&C(l-1)},[l]);let A=s&&e.groupCount>0&&e.settings.finalMode!=="full",k=Ue(i),I=e.voters.filter(u=>u.phone).length,h=()=>{if(!f){if(!N.length)return;let u=T.map(R=>R.name).join(", ");if(!window.confirm(u+" har inte röstat på alla låtar och räknas inte i "+rt(e)+". Fortsätta ändå?"))return}t({type:"FINISH_VOTING"})};return React.createElement("div",{className:"animate-in"},s?React.createElement(ve,{emoji:"⭐",after:"⭐"},"FINALEN"):React.createElement(ve,{emoji:a.emoji},a.name+" · Deltävling "+(e.currentGroup+1)),React.createElement("div",{className:"group-sublabel"},s?A?"Snabbfinal: se klippet och rösta":r.length+" finalister, rösta en sista gång!":"Titta och rösta på en låt i taget"),React.createElement(nn,{code:n.code,connected:n.connected,phoneCount:I,compact:!0}),React.createElement("div",{className:"song-tabs"},r.map((u,R)=>React.createElement("button",{key:u,className:"song-tab"+(R===l?" active":"")+(v(u)?" voted":""),onClick:()=>C(R)},R+1,". ",o[u].title,v(u)&&React.createElement("span",{className:"tab-check"},"✓")))),React.createElement("div",{className:"now-playing"},React.createElement("div",{className:"now-playing-count"},"Låt ",l+1," av ",r.length),React.createElement("div",{className:"now-playing-song"},i.title),React.createElement("div",{className:"now-playing-artist"},i.artist,i.pickedBy?" · vald av "+i.pickedBy:"")),React.createElement(it,{key:i.id,videoId:i.youtubeId,start:A?k:0,end:A?k+Fe:0,autoplay:!v(i.id)}),React.createElement("div",{className:"card"},React.createElement("div",{className:"card-title"},"Rösta på den här låten"),e.voters.map(u=>{let R=m(i.id,u.id);return React.createElement("div",{key:u.id,className:"voter-row"},React.createElement("div",{className:"voter-name"},u.phone?"📱 ":"",u.name),w===u.id?React.createElement(Oe,{simple:u.simple,value:(c[i.id]||{})[u.id]||0,onChange:B=>{t({type:"SET_VOTE",round:e.round,songId:i.id,voterId:u.id,stars:B}),b(null)}}):React.createElement("div",{className:"voter-status"},React.createElement("span",{className:R?"ok":"muted"},R?"✓ Har röstat":u.phone?"Röstar i mobilen…":"Väntar…"),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>b(u.id)},R?"Ändra":"Rösta här")))}),v(i.id)&&React.createElement("div",{className:"all-voted-banner"},"✓ Alla har röstat på den här!"),React.createElement("div",{className:"muted small text-center",style:{marginTop:12}},"Betygen är hemliga tills poängen avslöjas 🤫")),React.createElement("div",{className:"nav-arrows"},React.createElement("button",{className:"btn btn-ghost",onClick:()=>C(l-1),disabled:l===0},"← Förra"),React.createElement("div",{className:"nav-center muted small"},r.filter(v).length," av ",r.length," klara"),l<r.length-1?React.createElement("button",{className:"btn "+(v(i.id)?"btn-primary":"btn-blue"),onClick:()=>C(l+1)},"Nästa →"):React.createElement("div",{style:{width:120}})),f?React.createElement("div",{className:"text-center mt-24 animate-scale"},React.createElement("button",{className:"btn btn-gold btn-lg",onClick:h},s?"🏆 Räkna poängen!":"📊 Till recapen!")):React.createElement("div",{className:"text-center mt-16"},React.createElement("div",{className:"muted small"},"Ge betyg till alla låtar för att gå vidare"),N.length>0&&React.createElement("button",{className:"link-btn",style:{marginTop:6},onClick:h},"Fortsätt ändå (de som inte röstat klart räknas inte)")))}function Cn({state:e,dispatch:t}){let n=e.phase==="recap",s=n?ie:$(e.currentGroup),a=n?e.finalists:j(e),r=Z(e),{playing:o}=e.recap,l=Math.min(e.recap.index,a.length-1),i=r[a[l]],c=n?Be:je,m=Ue(i),v=l>=a.length-1,[f,N]=_(0),T=pe(!1);P(()=>{N(0),T.current=!1},[l,o]);let w=k=>t({type:"RECAP_SET",patch:{index:Math.max(0,Math.min(a.length-1,k))}}),b=()=>{T.current||(T.current=!0,v?t({type:"RECAP_SET",patch:{playing:!1}}):w(l+1))},C=k=>{let I=Math.max(0,Math.min(1,(k-m)/c));N(I),o&&I>=.999&&b()},A=()=>t({type:"RECAP_DONE"});return me(k=>{k.key==="ArrowRight"&&w(l+1),k.key==="ArrowLeft"&&w(l-1)},[l]),React.createElement("div",{className:"animate-in",style:{position:"relative"}},React.createElement(ue,{accent:s.accent}),React.createElement("div",{style:{position:"relative",zIndex:1}},React.createElement(ve,{emoji:s.emoji},n?"Finalisterna":"Recap: "+s.name),React.createElement("div",{className:"group-sublabel"},n?"Möt alla som gått vidare till finalen":"Låt oss minnas låtarna innan poängen avslöjas"),React.createElement("div",{className:"recap-card"},o?React.createElement(it,{key:i.id+":"+l,videoId:i.youtubeId,start:m,end:m+c,autoplay:!0,onTick:C,onEnded:b,onError:()=>setTimeout(b,2500)}):React.createElement(q,{videoId:i.youtubeId,className:"recap-thumb",alt:i.title}),React.createElement("div",{className:"recap-info"},React.createElement("div",{className:"recap-number"},n?"Finalist":"Låt"," ",l+1," av ",a.length),React.createElement("div",{className:"recap-song-title"},i.title),React.createElement("div",{className:"recap-song-artist"},i.artist,i.year?" ("+i.year+")":"",i.pickedBy?" · vald av "+i.pickedBy:""),o&&React.createElement("div",{className:"recap-progress"},React.createElement("div",{className:"recap-progress-bar",style:{width:f*100+"%"}})))),React.createElement("div",{className:"recap-controls"},React.createElement("button",{className:"btn btn-ghost btn-sm",disabled:l===0,onClick:()=>w(l-1)},"← Förra"),o?React.createElement("button",{className:"btn btn-ghost",onClick:()=>t({type:"RECAP_SET",patch:{playing:!1}})},"⏸ Paus"):React.createElement("button",{className:"btn btn-primary",onClick:()=>t({type:"RECAP_SET",patch:{playing:!0}})},"▶ Spela highlights"),v?React.createElement("div",{style:{width:100}}):React.createElement("button",{className:"btn btn-blue btn-sm",onClick:()=>w(l+1)},"Nästa →")),React.createElement("div",{className:"recap-dots"},a.map((k,I)=>React.createElement("span",{key:k,className:"dot"+(I===l?" current":I<l?" seen":"")}))),React.createElement("div",{className:"text-center mt-24"},React.createElement("button",{className:"btn btn-gold btn-lg",onClick:A},n?"🏆 Till finalomröstningen!":"📊 Visa poängen!"))))}function An({state:e,dispatch:t}){let n=te(e),s=Z(e),a=e.voters.filter(o=>n[o.id]),r=(o,l)=>t({type:"TIEBREAK_PICK",round:e.round,voterId:o,songId:l});return React.createElement("div",{className:"animate-in"},React.createElement(ve,{emoji:"🤔"},"Oavgjort!"),React.createElement("div",{className:"group-sublabel"},"Några gav samma betyg till flera låtar. Vilken är bäst? Den får de största poängen."),a.map(o=>{let l=n[o.id];return React.createElement("div",{key:o.id,className:"card tiebreak-card"},React.createElement("div",{className:"tiebreak-head"},React.createElement("b",null,o.phone?"📱 ":"",o.name)," gav ",React.createElement(Ve,{stars:l.stars,simple:o.simple})," till de här."),React.createElement("div",{className:"tiebreak-q"},l.picked>0?"Och vilken av de här är bäst?":"Vilken gillar du mest?",o.phone&&React.createElement("span",{className:"muted small"}," Välj här eller i mobilen.")),React.createElement("div",{className:"tb-options"},l.options.map(i=>React.createElement("button",{key:i,className:"tb-option",onClick:()=>r(o.id,i)},React.createElement(q,{videoId:s[i].youtubeId}),React.createElement("span",{className:"tb-title"},s[i].title),React.createElement("span",{className:"tb-artist"},s[i].artist)))),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>t({type:"TIEBREAK_RANDOM",round:e.round,voterId:o.id})},"🎲 Slumpa för ",o.name))}),React.createElement("div",{className:"text-center mt-16"},React.createElement("button",{className:"link-btn",onClick:()=>{window.confirm("Slumpa ordningen för alla som inte har valt än?")&&t({type:"TIEBREAK_RANDOM",round:e.round})}},"🎲 Slumpa för alla som är kvar")))}function _n({state:e,dispatch:t}){let n=ne(e.round),s=at(e),a=e.results[e.round],r=en(()=>ke(a),[a]),o=e.reveal.step,l=r.length-1,i=o>=0?r[o]:null,c=!!i&&i.kind==="done",m=Z(e),v=j(e),f=a.standings.map(S=>S.songId),N=Je(r,o,v),T=Je(r,o-1,v),w=Tt(c?f:v,N),b={};for(let S of e.voters)b[S.id]=S;let C=S=>b[S]&&b[S].name||(a.voterNames||{})[S]||"Någon",A=S=>!!(b[S]&&b[S].phone),[k,I]=_(!0),h=pe(null),u=S=>t({type:"REVEAL_STEP",step:S}),R=()=>{o<l&&u(o+1)},B=!n&&e.currentGroup+1>=e.groupCount;P(()=>{i&&(i.kind!=="twelvePending"&&h.current&&(h.current(),h.current=null),i.kind==="voter"&&(et(),i.awards.forEach((S,V)=>Ce(0,.35+V*.28))),i.kind==="ten"&&Ce(1),i.kind==="twelvePending"&&(h.current=Ht(14)),i.kind==="twelve"&&(tt(),Ce(2,.05),Qt()),i.kind==="done"&&!n&&(nt(),Ge(2500)))},[o]),P(()=>()=>{h.current&&h.current()},[]),P(()=>{if(!k||o<0||o>=l)return;let S=r[o],V=2600;S.kind==="voter"?V=2400+450*S.awards.length:S.kind==="twelvePending"?V=A(S.voterId)?12e3:2800:S.kind==="twelve"&&(V=3600);let L=setTimeout(()=>u(o+1),V);return()=>clearTimeout(L)},[k,o]),me(S=>{(S.key===" "||S.key==="Enter"||S.key==="ArrowRight")&&(S.preventDefault(),o<0?u(0):c||R())},[o,c]);let K=n?1:U,D=c?wt(a.standings[K-1],a.standings[K]):null,F=(m[a.standings[K-1]&&a.standings[K-1].songId]||{}).title;return React.createElement("div",{className:"animate-in",style:{position:"relative"}},React.createElement(De,{accent:s.accent}),c&&React.createElement(ue,{accent:s.accent}),React.createElement("div",{style:{position:"relative",zIndex:1}},React.createElement(ve,{emoji:s.emoji},n?"Finalens poäng":"Poängen: "+s.name),React.createElement("div",{className:"group-sublabel"},n?"Vem vinner Familje-Mello?":"Topp "+U+" går vidare till finalen!"),o<0&&React.createElement("div",{className:"text-center reveal-start"},React.createElement("div",{className:"muted",style:{marginBottom:16}},a.voterIds.length," ",a.voterIds.length===1?"röstare delar":"röstare delar var för sig"," ut 12, 10, 8 … poäng. En i taget!"),React.createElement("button",{className:"btn btn-gold btn-lg",onClick:()=>u(0)},"🎤 Starta poängavslöjningen"),React.createElement("label",{className:"auto-toggle"},React.createElement("input",{type:"checkbox",checked:k,onChange:S=>I(S.target.checked)})," Gå vidare automatiskt")),i&&!c&&React.createElement(Mn,{beat:i,songs:m,name:C(i.voterId),phone:A(i.voterId)}),c&&React.createElement("div",{className:"announce done"},React.createElement("div",{className:"announce-who"},n?"Alla poäng är utdelade!":"Klart! De här går till finalen:"),!n&&React.createElement("div",{className:"announce-final-list"},a.standings.slice(0,U).map(S=>m[S.songId].title).join(" och ")),D==="lot"&&React.createElement("div",{className:"tie-note"},"🎲 Exakt lika i allt, så lotten avgjorde."),D==="twelves"&&React.createElement("div",{className:"tie-note"},"Lika många poäng! ",F," går före på fler 12:or."),D==="higher"&&React.createElement("div",{className:"tie-note"},"Lika många poäng! ",F," går före på fler höga poäng.")),React.createElement(On,{ids:v,order:w,totals:N,prev:T,songs:m,done:c,final:n}),o>=0&&!c&&React.createElement("div",{className:"reveal-controls"},React.createElement("button",{className:"btn btn-blue",onClick:R},"Nästa ▶"),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>I(S=>!S)},k?"⏸ Pausa":"▶ Automatiskt"),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>u(l)},"⏭ Hoppa till slutet")),c&&React.createElement("div",{className:"text-center mt-24"},React.createElement("button",{className:"btn btn-gold btn-lg",onClick:()=>t({type:"REVEAL_DONE"})},n?"🏆 Visa vinnaren!":B?"⭐ Vidare till finalen!":"➡️ Nästa deltävling"))))}function Mn({beat:e,songs:t,name:n,phone:s}){let a=r=>t[r.songId]||{};if(e.kind==="voter")return React.createElement("div",{key:"v"+e.voterId,className:"announce"},React.createElement("div",{className:"announce-who"},"Röster från ",React.createElement("b",null,n)),React.createElement("div",{className:"low-chips"},e.awards.map((r,o)=>React.createElement("div",{key:r.songId,className:"low-chip",style:{animationDelay:.35+o*.28+"s"}},React.createElement("span",{className:"low-pts"},r.points),React.createElement("span",null,a(r).title)))));if(e.kind==="ten"){let r=a(e.awards[0]);return React.createElement("div",{key:"t"+e.voterId,className:"announce"},React.createElement("div",{className:"announce-who"},n),React.createElement("div",{className:"reveal-points"},"10"),React.createElement("div",{className:"reveal-goesto"},"poäng går till"),React.createElement("div",{className:"reveal-song"},r.title))}if(e.kind==="twelvePending")return React.createElement("div",{key:"p"+e.voterId,className:"announce pending"},React.createElement("div",{className:"announce-who"},n),React.createElement("div",{className:"announce-drum"},"Och mina 12 poäng går till…"),s&&React.createElement("div",{className:"announce-phone"},"📱 ",n,", tryck på knappen i din mobil!"),React.createElement("div",{className:"drum-dots"},React.createElement("span",null),React.createElement("span",null),React.createElement("span",null)));if(e.kind==="twelve"){let r=a(e.awards[0]);return React.createElement("div",{key:"w"+e.voterId,className:"announce twelve"},React.createElement("div",{className:"announce-who"},n),React.createElement("div",{className:"reveal-points big"},"12"),React.createElement("div",{className:"reveal-goesto"},"poäng går till"),React.createElement("div",{className:"announce-twelve-song"},React.createElement(q,{videoId:r.youtubeId,className:"announce-thumb"}),React.createElement("div",null,React.createElement("div",{className:"reveal-song"},r.title),React.createElement("div",{className:"muted"},r.artist))))}return null}function On({ids:e,order:t,totals:n,prev:s,songs:a,done:r,final:o}){let l={};return t.forEach((i,c)=>{l[i]=c}),React.createElement("div",{className:"scoreboard",style:{height:"calc(var(--row) * "+e.length+")"}},e.map(i=>{let c=l[i],m=a[i]||{},v=(n[i]||0)-(s[i]||0),f=r&&!o&&c<U,N=r&&!o&&c>=U,T="sb-row"+(f?" qualified":"")+(N?" out":"")+(r&&o&&c===0?" winner":"")+(v>0?" bumped":"");return React.createElement("div",{key:i,className:T,style:{transform:"translateY(calc(var(--row) * "+c+"))"}},React.createElement("div",{className:"sb-pos"},r?lt(c):c+1),React.createElement(q,{videoId:m.youtubeId,className:"sb-thumb"}),React.createElement("div",{className:"sb-info"},React.createElement("div",{className:"sb-title"},m.title),React.createElement("div",{className:"sb-artist"},m.artist,m.pickedBy?" · vald av "+m.pickedBy:"")),v>0&&React.createElement("div",{key:"d"+n[i],className:"sb-delta"},"+",v),React.createElement("div",{className:"sb-points"},n[i]||0),r&&!o&&React.createElement("span",{className:"badge "+(f?"badge-gold":"badge-red")},f?"FINAL":"Ute"))}))}function Vn({state:e,dispatch:t}){let n=e.results.final,s=Z(e),a=n.standings[0],r=s[a.songId],o=St(e.songs,e.results),l=Math.max(1,...n.standings.map(i=>i.points));return P(()=>{let i=setTimeout(()=>{nt(),Ge()},300);return Dt({gameId:e.gameId,date:new Date().toLocaleDateString("sv-SE"),title:r.title,artist:r.artist||"",pickedBy:r.pickedBy||"",points:a.points,songs:e.songs.length}),()=>clearTimeout(i)},[]),React.createElement("div",{className:"animate-in",style:{position:"relative"}},React.createElement(ue,{accent:"#f59e0b"}),React.createElement(De,{accent:"rgba(245,158,11,0.2)"}),React.createElement("div",{className:"winner-container",style:{position:"relative",zIndex:1}},React.createElement("div",{className:"winner-trophy"},"🏆"),React.createElement("div",{className:"winner-label"},"Vinnare av Familje-Mello"),React.createElement(q,{videoId:r.youtubeId,className:"winner-thumb"}),React.createElement("div",{className:"winner-song"},r.title),r.artist&&React.createElement("div",{className:"winner-artist"},r.artist),r.pickedBy&&React.createElement("div",{className:"winner-picker"},"Vald av ",r.pickedBy," 👏"),React.createElement("div",{className:"winner-score"},a.points," poäng"),React.createElement("div",{className:"muted"},a.twelves," ",a.twelves===1?"tolva":"tolvor"," i finalen")),React.createElement("div",{className:"section-title"},"Slutställning"),n.standings.map((i,c)=>{let m=s[i.songId];return React.createElement("div",{key:i.songId,className:"result-row"+(c===0?" winner":""),style:{animationDelay:c*.1+"s"}},React.createElement("div",{className:"result-position"},lt(c)),React.createElement("div",{className:"result-info"},React.createElement("div",{className:"result-title"},m.title),React.createElement("div",{className:"result-artist"},m.artist,m.pickedBy?" · vald av "+m.pickedBy:""),React.createElement("div",{className:"result-bar-container"},React.createElement("div",{className:"result-bar",style:{"--bar-width":Math.round(i.points/l*100)+"%",animationDelay:c*.1+.3+"s",background:c===0?"var(--gradient-gold)":c<3?"var(--gradient-pink)":"rgba(255,255,255,0.15)"}}))),React.createElement("div",{className:"result-score"},i.points))}),o.length>=2&&React.createElement("div",{className:"card mt-24 picker-card"},React.createElement("div",{className:"card-title"},"👑 Bästa låtväljare"),React.createElement("div",{className:"muted small",style:{marginBottom:10}},"Alla poäng som ens låtar fick, i deltävlingarna och finalen."),o.map((i,c)=>React.createElement("div",{key:i.name,className:"picker-row"+(c===0?" top":"")},React.createElement("span",null,c===0?"👑":lt(c)),React.createElement("span",{className:"picker-name"},i.name),React.createElement("span",{className:"muted small"},i.songs," ",i.songs===1?"låt":"låtar"),React.createElement("span",{className:"picker-points"},i.points," p")))),React.createElement("div",{className:"text-center mt-24",style:{marginBottom:40}},React.createElement("button",{className:"btn btn-primary btn-lg",onClick:()=>{Ge(),tt()}},"🎉 Mer konfetti!"),React.createElement("div",{className:"winner-actions"},React.createElement("button",{className:"btn btn-ghost",onClick:()=>t({type:"NEW_GAME"})},"Nytt Mello (nya låtar)"),React.createElement("button",{className:"btn btn-ghost",onClick:()=>t({type:"END_GAME"})},"Samma låtar igen"))))}var{useState:J,useEffect:Pe,useRef:ge}=React,sn=(e,t,n)=>e+"|"+t+"|"+n;function an({code:e}){let[t,n]=J(null),[s,a]=J("connecting"),[r,o]=J(()=>Se("mello_parts_"+e,[])),[l,i]=J(""),[c,m]=J({}),[v,f]=J({}),[N,T]=J(null),[w,b]=J(null),C=ge(null),A=ge(r);A.current=r;let k=ge(t);k.current=t;let I=ge(c);I.current=c;let h=ge(0),u=(p,y)=>{C.current&&C.current.send({type:"broadcast",event:p,payload:y})},R=()=>{h.current=Date.now(),A.current.forEach(p=>u("register",{id:p.id,name:p.name,simple:!!p.simple}))},B=p=>{A.current=p,o(p),Ee("mello_parts_"+e,p)};Pe(()=>{let p=Te(e);if(!p){a("error");return}p.on("broadcast",{event:"ballot"},({payload:g})=>{g&&n(g)}),p.on("broadcast",{event:"rollcall"},()=>R()),p.on("broadcast",{event:"kick"},({payload:g})=>{g&&g.id&&B(A.current.filter(E=>E.id!==g.id))}),p.subscribe(g=>{g==="SUBSCRIBED"?(a("live"),u("hello",{}),R()):(g==="CHANNEL_ERROR"||g==="TIMED_OUT")&&a("error")}),C.current=p;let y=()=>{document.visibilityState==="visible"&&(u("hello",{}),se())};return document.addEventListener("visibilitychange",y),()=>{document.removeEventListener("visibilitychange",y),we(p),C.current=null}},[e]),Pe(()=>{if(!t)return;m(y=>{let g=!1,E={...y};for(let[M,G]of Object.entries(y)){let[O,H,z]=M.split("|"),d=t.kind==="vote"&&t.round===O,W=d&&t.votes&&t.votes[H]&&t.votes[H][z]===G;(!d||W)&&(delete E[M],g=!0)}return g?E:y}),A.current.some(y=>!(t.voters||[]).some(g=>g.id===y.id))&&Date.now()-h.current>3e3&&R()},[t]),Pe(()=>{let p=0,y=setInterval(()=>{let g=k.current,E=Object.entries(I.current);if(!(!g||g.kind!=="vote"||!E.length)){p+=1,p%4===0&&R();for(let[M,G]of E){let[O,H,z]=M.split("|");O===g.round&&u("vote",{round:O,songId:H,voterId:z,stars:G})}}},1500);return()=>clearInterval(y)},[]);let K=()=>{let p=l.trim();if(!p)return;let y={id:ee("p_"),name:p.slice(0,24),simple:!1};B([...A.current,y]),i(""),u("register",{id:y.id,name:y.name,simple:!1}),se()},D=p=>{B(A.current.filter(y=>y.id!==p)),u("unregister",{id:p})},F=p=>{let y=A.current.map(E=>E.id===p?{...E,simple:!E.simple}:E);B(y);let g=y.find(E=>E.id===p);u("register",{id:g.id,name:g.name,simple:!!g.simple})},S=(p,y)=>{let g=k.current;!g||g.kind!=="vote"||(m(E=>({...E,[sn(g.round,g.song.id,p)]:y})),u("vote",{round:g.round,songId:g.song.id,voterId:p,stars:y}))},V=React.createElement(Dn,{parts:r,name:l,setName:i,addPart:K,removePart:D,toggleSimple:F,compact:!!t&&t.kind!=="wait"}),L;if(s==="error")L=React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-msg"},"Kunde inte ansluta. Kontrollera nätet och ladda om sidan."));else if(!t)L=React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-msg"},"Ansluter till spelet…"));else if(t.kind==="vote"){let p=t.song,y=g=>((t.votes||{})[p.id]||{})[g];L=React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-eyebrow"},t.label," · Låt ",t.songIndex+1," av ",t.songCount),React.createElement(q,{videoId:p.youtubeId,className:"phone-thumb",alt:p.title}),React.createElement("div",{className:"phone-song-title"},p.title),p.artist&&React.createElement("div",{className:"phone-song-artist"},p.artist),p.pickedBy&&React.createElement("div",{className:"phone-picker"},"Vald av ",p.pickedBy),r.length===0?React.createElement("div",{className:"phone-msg",style:{marginTop:16}},"Skriv ditt namn nedan för att rösta."):r.map(g=>{let E=sn(t.round,p.id,g.id),M=y(g.id),G=c[E],O=G!=null?G:M||0,H=G!=null&&G!==M;return React.createElement("div",{key:g.id,className:"phone-vote-row"},React.createElement("div",{className:"phone-vote-name"},g.name,H?React.createElement("span",{className:"phone-sending"}," skickar…"):M?React.createElement("span",{className:"ok"}," ✓"):null),React.createElement(Oe,{simple:g.simple,value:O,onChange:z=>S(g.id,z),big:!0}))}))}else if(t.kind==="tiebreak"){let p=r.filter(y=>t.questions&&t.questions[y.id]);L=p.length===0?React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-msg"},N===t.round?"Klart! Väntar på att de andra väljer… ⏳":"Några har lika betyg på flera låtar och väljer nu sin favorit. Vänta lite… ⏳")):React.createElement("div",null,p.map(y=>{let g=t.questions[y.id],E=g.options.map(O=>O.id).join(","),M=v[y.id]===E,G=O=>{u("tiebreak_pick",{round:t.round,voterId:y.id,songId:O}),f(H=>({...H,[y.id]:E})),T(t.round)};return React.createElement("div",{key:y.id,className:"phone-card",style:{marginBottom:14}},React.createElement("div",{className:"phone-eyebrow"},"Oavgjort för ",y.name,"!"),React.createElement("div",{className:"phone-h"},g.again?"Och vilken av de här är bäst?":"Vilken gillar du mest?"),React.createElement("div",{className:"muted small",style:{marginBottom:12}},"Du gav ",React.createElement(Ve,{stars:g.stars,simple:y.simple})," till alla de här."),React.createElement("div",{className:"tb-options phone"},g.options.map(O=>React.createElement("button",{key:O.id,className:"tb-option"+(M?" dim":""),onClick:()=>G(O.id)},React.createElement(q,{videoId:O.youtubeId}),React.createElement("span",{className:"tb-title"},O.title),React.createElement("span",{className:"tb-artist"},O.artist)))),M&&React.createElement("div",{className:"phone-sending",style:{marginTop:8}},"skickar…"),React.createElement("button",{className:"link-btn",style:{marginTop:10},onClick:()=>u("tiebreak_random",{round:t.round,voterId:y.id})},"🎲 Kan inte välja, slumpa!"))}))}else if(t.kind==="reveal"){let p=t.beat,y=p&&p.kind==="twelvePending"?r.find(M=>M.id===p.voterId):null,g=p?p.kind+":"+p.voterId:"",E=p&&p.voterId?(t.voters.find(M=>M.id===p.voterId)||{}).name:null;L=y?React.createElement("div",{className:"phone-card phone-turn"},React.createElement("div",{className:"phone-eyebrow"},"Din tur, ",y.name,"!"),React.createElement("button",{className:"btn btn-gold phone-big-btn",disabled:w===g,onClick:()=>{b(g),u("reveal_press",{voterId:y.id})}},"🎤 Ge mina 12 poäng!"),React.createElement("div",{className:"muted small",style:{marginTop:10}},"Titta på TV:n när du trycker!")):React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-msg"},t.started?"Poängen avslöjas på TV:n! 📺":"Snart kommer poängen. Titta på TV:n! 📺",E&&React.createElement("div",{className:"phone-now"},"Nu: röster från ",React.createElement("b",null,E))))}else{let p={setup:r.length?"Du är med! Väntar på att spelet ska börja…":"Skriv ditt namn nedan så är du med!",groupIntro:"En ny deltävling börjar. Titta på TV:n! 🎬",finalIntro:"Dags för FINALEN! Titta på TV:n! 🏆",groupRecap:"Recap på TV:n. Minns du låtarna? 👀",recap:"Recap av finalisterna på TV:n! 👀",winner:"Vinnaren är korad! Titta på TV:n 🏆"};L=React.createElement("div",{className:"phone-card"},React.createElement("div",{className:"phone-msg"},p[t.phase]||"Vänta på nästa låt…"))}return React.createElement("div",{className:"phone-wrap"},React.createElement("div",{className:"phone-header"},React.createElement("div",{className:"logo",style:{fontSize:"1.7rem"}},"Familje-Mello"),React.createElement("div",{className:"phone-sub"},"Spel ",e," ",React.createElement("span",{className:"live-dot"+(s==="live"?" on":"")}))),L,V)}function Dn({parts:e,name:t,setName:n,addPart:s,removePart:a,toggleSimple:r,compact:o}){let[l,i]=J(!o||e.length===0);return Pe(()=>{o&&e.length>0&&i(!1)},[o]),o&&!l&&e.length>0?React.createElement("div",{className:"text-center",style:{marginTop:16}},React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>i(!0)},"👤 Röstare i den här mobilen (",e.length,")")):React.createElement("div",{className:"phone-card",style:{marginTop:14,textAlign:"left"}},React.createElement("div",{className:"flex-between",style:{marginBottom:12}},React.createElement("div",{style:{fontWeight:700,fontSize:"1.05rem"}},"Röstare i den här mobilen"),o&&e.length>0&&React.createElement("button",{className:"link-btn",onClick:()=>i(!1)},"Dölj ▴")),e.length===0&&React.createElement("div",{className:"phone-msg",style:{marginBottom:10}},"Lägg till alla som röstar härifrån, en eller flera."),e.map(c=>React.createElement("div",{key:c.id,className:"voter-row"},React.createElement("div",{className:"voter-name"},c.name),React.createElement("div",{style:{display:"flex",gap:8}},React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>r(c.id),title:"Växla mellan stjärnor och tre stora knappar"},c.simple?"👶 Barnläge":"⭐ Stjärnor"),React.createElement("button",{className:"btn btn-ghost btn-sm",onClick:()=>a(c.id)},"Ta bort")))),React.createElement("div",{className:"input-row",style:{marginTop:12,marginBottom:0}},React.createElement("input",{className:"input",placeholder:"Namn",value:t,maxLength:24,onChange:c=>n(c.target.value),onKeyDown:c=>{c.key==="Enter"&&s()}}),React.createElement("button",{className:"btn btn-primary btn-sm",onClick:s},"+ Lägg till")))}var ct=Vt(),rn=()=>{ct||jt(),se()};document.addEventListener("pointerdown",rn,{passive:!0});document.addEventListener("keydown",rn);document.addEventListener("visibilitychange",()=>{document.visibilityState==="visible"&&se()});ReactDOM.createRoot(document.getElementById("root")).render(ct?React.createElement(an,{code:ct}):React.createElement(tn,null));})();
+</script>
 </body>
 </html>
