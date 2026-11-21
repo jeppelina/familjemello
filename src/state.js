@@ -1,18 +1,18 @@
 // Game state: the reducer, snapshots, and the ballot that phones see.
 // Pure apart from Math.random (shuffles, lots), which actions can override with `rng`.
 import {
-  assignGroups, buildRevealBeats, FINAL_THEME, genId, getGroupTheme, hasVotedAll,
-  pendingTiebreaks, qualifiersOf, randomFillPicks, scoreRound, shuffle, starsOf,
+  ackCode, assignGroups, cutTie, decideTie, FINAL_THEME, genId, getGroupTheme, hasVotedAll,
+  QUALIFIERS_PER_GROUP, qualifiersOf, revealSteps, scoreRound, shuffle, STAR_MAX,
 } from './logic.js';
 import { getPlaylist } from './playlists.js';
 
-export const SNAPSHOT_VERSION = 2;
+export const SNAPSHOT_VERSION = 3;
 
 export const initialState = {
   v: SNAPSHOT_VERSION,
   gameId: null,
-  phase: 'setup', // setup | groupIntro | group | groupRecap | finalIntro | recap | final | tiebreak | reveal | winner
-  songs: [], // { id, title, artist, youtubeId, highlightStart, year, pickedBy, group }
+  phase: 'setup', // setup | lineup | groupIntro | group | groupRecap | finalIntro | recap | final | reveal | favorite | winner
+  songs: [], // { id, title, artist, youtubeId, highlightStart, year, released, people, formed, facts, pickedBy, group }
   voters: [], // { id, name, simple, phone }
   settings: { finalMode: 'highlights' }, // 'highlights' | 'full'
   groupCount: 0,
@@ -20,11 +20,11 @@ export const initialState = {
   round: null, // 'group_0'.. | 'final'
   currentSongIndex: 0,
   finalists: [], // song ids
-  votes: {}, // round -> songId -> voterId -> stars
-  picks: {}, // round -> voterId -> [songIds picked in tiebreaks]
+  votes: {}, // round -> songId -> voterId -> stars (1..10)
+  favorites: {}, // round -> voterId -> songId, only when a tie decides who goes on
   roundVoters: {}, // round -> voterIds who count in that round
-  results: {}, // round -> scoreRound(...) result
-  reveal: { step: -1 },
+  results: {}, // round -> scoreRound(...) result, plus .decider after a favourite vote
+  reveal: { step: -1 }, // -1 not started, 0..n-1 showing that step, n = all points out
   recap: { index: 0, playing: false },
 };
 
@@ -54,16 +54,16 @@ export function roundLabel(state, round = state.round) {
   return isFinal(round) ? 'Finalen' : getGroupTheme(parseInt(round.split('_')[1], 10)).name;
 }
 
-export function revealBeats(state) {
-  return buildRevealBeats(state.results[state.round]);
+export const spotsFor = (round) => (isFinal(round) ? 1 : QUALIFIERS_PER_GROUP);
+
+export function currentSteps(state) {
+  return revealSteps(state.results[state.round]);
 }
 
-// Voters that still owe a tiebreak answer in the current round.
-export function currentTiebreaks(state) {
-  const round = state.round;
-  const ids = songIdsForRound(state, round);
-  const voterIds = (state.roundVoters[round] || []).filter((id) => state.voters.some((v) => v.id === id));
-  return pendingTiebreaks(ids, voterIds, state.votes[round], state.picks[round]);
+// The tie the favourite vote is about, if the round needs one.
+export function currentTie(state) {
+  const result = state.results[state.round];
+  return result ? cutTie(result, spotsFor(state.round)) : null;
 }
 
 export function completeVoterIds(state, round = state.round) {
@@ -73,24 +73,35 @@ export function completeVoterIds(state, round = state.round) {
 
 // ==================== TRANSITIONS ====================
 
-function scoreAndReveal(state, rng) {
+// Voting is over: freeze who counts, add up the points, and start the reveal.
+function toReveal(state) {
   const round = state.round;
-  const result = scoreRound(songIdsForRound(state, round), state.roundVoters[round] || [], state.votes[round], state.picks[round], rng);
-  // Keep names with the result so the reveal still works if someone leaves afterwards.
-  result.voterNames = {};
-  for (const v of state.voters) if (result.voterIds.includes(v.id)) result.voterNames[v.id] = v.name;
-  return { ...state, phase: 'reveal', results: { ...state.results, [round]: result }, reveal: { step: -1 } };
+  const voterIds = completeVoterIds(state, round);
+  const result = scoreRound(songIdsForRound(state, round), voterIds, state.votes[round]);
+  return {
+    ...state,
+    phase: 'reveal',
+    roundVoters: { ...state.roundVoters, [round]: voterIds },
+    results: { ...state.results, [round]: result },
+    reveal: { step: -1 },
+  };
 }
 
-// Voting is over: freeze who counts, then ask tiebreak questions if anyone needs them.
-function toScoring(state, rng) {
-  const round = state.round;
-  const s = { ...state, roundVoters: { ...state.roundVoters, [round]: completeVoterIds(state, round) } };
-  return Object.keys(currentTiebreaks(s)).length ? { ...s, phase: 'tiebreak' } : scoreAndReveal(s, rng);
+// After a round is fully settled: next group, the final, or the winner.
+function advance(state, rng) {
+  if (isFinal(state.round)) return { ...state, phase: 'winner' };
+  const next = state.currentGroup + 1;
+  if (next < state.groupCount) {
+    return { ...state, phase: 'groupIntro', currentGroup: next, round: 'group_' + next, currentSongIndex: 0, reveal: { step: -1 } };
+  }
+  const finalists = [];
+  for (let g = 0; g < state.groupCount; g++) finalists.push(...qualifiersOf(state.results['group_' + g]));
+  return { ...state, phase: 'finalIntro', round: 'final', finalists: shuffle(finalists, rng), currentSongIndex: 0, reveal: { step: -1 } };
 }
 
-function afterTiebreakChange(state, rng) {
-  return Object.keys(currentTiebreaks(state)).length ? state : scoreAndReveal(state, rng);
+function startFirstRound(state) {
+  if (state.groupCount === 0) return { ...state, phase: 'finalIntro', round: 'final', finalists: state.songs.map((s) => s.id) };
+  return { ...state, phase: 'groupIntro', round: 'group_0', currentGroup: 0, finalists: [] };
 }
 
 function resetProgress(state, songs) {
@@ -146,15 +157,34 @@ export function reducer(state, action) {
       return { ...state, settings: { ...state.settings, [action.key]: action.value } };
 
     case 'START_TOURNAMENT': {
+      // Deal the songs into groups and show the lineup, where it can be changed.
       if (state.songs.length < 4 || state.voters.length < 1) return state;
       const { groupCount, songs } = assignGroups(state.songs, rng);
-      const base = {
-        ...state, gameId: genId('g', rng), songs, groupCount, currentGroup: 0, currentSongIndex: 0,
-        votes: {}, picks: {}, roundVoters: {}, results: {}, reveal: { step: -1 }, recap: { index: 0, playing: false },
+      return {
+        ...state, phase: 'lineup', gameId: genId('g', rng), songs, groupCount, currentGroup: 0, round: null, currentSongIndex: 0,
+        finalists: [], votes: {}, favorites: {}, roundVoters: {}, results: {}, reveal: { step: -1 }, recap: { index: 0, playing: false },
       };
-      if (groupCount === 0) return { ...base, phase: 'finalIntro', round: 'final', finalists: songs.map((s) => s.id) };
-      return { ...base, phase: 'groupIntro', round: 'group_0', finalists: [] };
     }
+    case 'LINEUP_SWAP': {
+      // Swap two songs: each takes the other's group and place in the running order.
+      if (state.phase !== 'lineup' || action.a === action.b) return state;
+      const i = state.songs.findIndex((x) => x.id === action.a);
+      const j = state.songs.findIndex((x) => x.id === action.b);
+      if (i < 0 || j < 0) return state;
+      const songs = [...state.songs];
+      songs[i] = { ...state.songs[j], group: state.songs[i].group };
+      songs[j] = { ...state.songs[i], group: state.songs[j].group };
+      return { ...state, songs };
+    }
+    case 'LINEUP_SHUFFLE': {
+      if (state.phase !== 'lineup') return state;
+      const { groupCount, songs } = assignGroups(state.songs, rng);
+      return { ...state, groupCount, songs };
+    }
+    case 'LINEUP_BACK':
+      return state.phase === 'lineup' ? resetProgress(state, state.songs) : state;
+    case 'LINEUP_DONE':
+      return state.phase === 'lineup' ? startFirstRound(state) : state;
     case 'START_ROUND': {
       if (state.phase === 'groupIntro') return { ...state, phase: 'group', currentSongIndex: 0 };
       if (state.phase === 'finalIntro') {
@@ -172,7 +202,7 @@ export function reducer(state, action) {
       const { round, songId, voterId } = action;
       const stars = Math.round(Number(action.stars));
       if (round !== state.round || (state.phase !== 'group' && state.phase !== 'final')) return state;
-      if (!(stars >= 1 && stars <= 5)) return state;
+      if (!(stars >= 1 && stars <= STAR_MAX)) return state;
       if (!songIdsForRound(state, round).includes(songId)) return state;
       if (!state.voters.some((v) => v.id === voterId)) return state;
       const rv = { ...(state.votes[round] || {}) };
@@ -182,69 +212,103 @@ export function reducer(state, action) {
     case 'FINISH_VOTING': {
       if (completeVoterIds(state).length === 0) return state;
       if (state.phase === 'group') return { ...state, phase: 'groupRecap', recap: { index: 0, playing: true } };
-      if (state.phase === 'final') return toScoring(state, rng);
+      if (state.phase === 'final') return toReveal(state);
       return state;
     }
     case 'RECAP_SET':
       return { ...state, recap: { ...state.recap, ...action.patch } };
     case 'RECAP_DONE':
-      if (state.phase === 'groupRecap') return toScoring(state, rng);
+      if (state.phase === 'groupRecap') return toReveal(state);
       if (state.phase === 'recap') return { ...state, phase: 'final', currentSongIndex: 0, recap: { index: 0, playing: false } };
       return state;
 
-    case 'TIEBREAK_PICK': {
-      if (state.phase !== 'tiebreak' || action.round !== state.round) return state;
-      const q = currentTiebreaks(state)[action.voterId];
-      if (!q || !q.options.includes(action.songId)) return state;
-      const rp = { ...(state.picks[state.round] || {}) };
-      rp[action.voterId] = [...(rp[action.voterId] || []), action.songId];
-      return afterTiebreakChange({ ...state, picks: { ...state.picks, [state.round]: rp } }, rng);
-    }
-    case 'TIEBREAK_RANDOM': {
-      if (state.phase !== 'tiebreak' || action.round !== state.round) return state;
-      const pending = currentTiebreaks(state);
-      const who = action.voterId ? [action.voterId].filter((id) => pending[id]) : Object.keys(pending);
-      if (!who.length) return state;
-      const ids = songIdsForRound(state);
-      const rp = { ...(state.picks[state.round] || {}) };
-      for (const vid of who) rp[vid] = randomFillPicks(ids, starsOf(state.votes[state.round], ids, vid), rp[vid] || [], rng);
-      return afterTiebreakChange({ ...state, picks: { ...state.picks, [state.round]: rp } }, rng);
-    }
-
     case 'REVEAL_STEP': {
       if (state.phase !== 'reveal') return state;
-      const n = revealBeats(state).length;
-      return { ...state, reveal: { step: Math.max(-1, Math.min(n - 1, action.step)) } };
-    }
-    case 'REVEAL_PRESS': {
-      // A phone voter pressed "give my 12 points".
-      if (state.phase !== 'reveal') return state;
-      const beats = revealBeats(state);
-      const beat = beats[state.reveal.step];
-      if (!beat || beat.kind !== 'twelvePending' || beat.voterId !== action.voterId) return state;
-      return { ...state, reveal: { step: state.reveal.step + 1 } };
+      const n = currentSteps(state).length;
+      return { ...state, reveal: { step: Math.max(-1, Math.min(n, action.step)) } };
     }
     case 'REVEAL_DONE': {
+      // All points are out. A tie on the line that matters goes to a favourite vote.
       if (state.phase !== 'reveal') return state;
-      if (isFinal(state.round)) return { ...state, phase: 'winner' };
-      const next = state.currentGroup + 1;
-      if (next < state.groupCount) {
-        return { ...state, phase: 'groupIntro', currentGroup: next, round: 'group_' + next, currentSongIndex: 0, reveal: { step: -1 } };
-      }
-      const finalists = [];
-      for (let g = 0; g < state.groupCount; g++) finalists.push(...qualifiersOf(state.results['group_' + g]));
-      return { ...state, phase: 'finalIntro', round: 'final', finalists: shuffle(finalists, rng), currentSongIndex: 0, reveal: { step: -1 } };
+      const result = state.results[state.round];
+      if (currentTie(state) && !result.decider) return { ...state, phase: 'favorite' };
+      return advance(state, rng);
+    }
+
+    case 'FAVORITE_PICK': {
+      if (state.phase !== 'favorite' || action.round !== state.round) return state;
+      const tie = currentTie(state);
+      const result = state.results[state.round];
+      if (!tie || result.decider || !tie.songIds.includes(action.songId)) return state;
+      if (!(state.roundVoters[state.round] || []).includes(action.voterId)) return state;
+      const rf = { ...(state.favorites[state.round] || {}), [action.voterId]: action.songId };
+      return { ...state, favorites: { ...state.favorites, [state.round]: rf } };
+    }
+    case 'FAVORITE_DECIDE': {
+      if (state.phase !== 'favorite') return state;
+      const tie = currentTie(state);
+      const result = state.results[state.round];
+      if (!tie || result.decider) return state;
+      const decider = decideTie(tie, state.favorites[state.round], rng);
+      return { ...state, results: { ...state.results, [state.round]: { ...result, decider } } };
+    }
+    case 'FAVORITE_DONE': {
+      if (state.phase !== 'favorite' || !state.results[state.round].decider) return state;
+      return advance(state, rng);
     }
 
     case 'END_GAME': // stop mid-game: keep songs and voters, forget the votes
       return resetProgress(state, state.songs);
     case 'NEW_GAME': // after a finished game: keep the voters, start with no songs
       return resetProgress(state, []);
-    case 'RESTORE':
-      return action.snapshot && action.snapshot.v === SNAPSHOT_VERSION ? { ...initialState, ...stripSnapshot(action.snapshot) } : state;
+    case 'RESTORE': {
+      const snap = action.snapshot;
+      if (!canRestore(snap)) return state;
+      if (snap.v === SNAPSHOT_VERSION) return { ...initialState, ...stripSnapshot(snap) };
+      return migrateV2(snap);
+    }
     default:
       return state;
   }
+}
+
+export const canRestore = (snap) => !!snap && (snap.v === SNAPSHOT_VERSION || snap.v === 2);
+
+// A game saved by the old version (5 stars, tiebreak questions, voter-by-voter reveal)
+// carries on under the new rules. Rounds already played keep the result everyone saw,
+// including who went through; only the counts of each score are kept, not who gave
+// what. A round in the middle of its reveal opens on its finished scoreboard.
+export function migrateV2(snap) {
+  const { savedAt, picks, ...rest } = snap;
+  const votes = {};
+  for (const [round, bySong] of Object.entries(snap.votes || {})) {
+    votes[round] = {};
+    for (const [sid, byVoter] of Object.entries(bySong || {})) {
+      votes[round][sid] = {};
+      for (const [vid, st] of Object.entries(byVoter || {})) votes[round][sid][vid] = Math.max(1, Math.min(STAR_MAX, Math.round(st * 2)));
+    }
+  }
+  const results = {};
+  for (const [round, r] of Object.entries(snap.results || {})) {
+    const counts = {};
+    for (const list of Object.values(r.awards || {})) {
+      for (const a of list) {
+        counts[a.songId] = counts[a.songId] || {};
+        counts[a.songId][a.points] = (counts[a.songId][a.points] || 0) + 1;
+      }
+    }
+    const standings = (r.standings || []).map((x) => ({ songId: x.songId, points: x.points, counts: counts[x.songId] || {} }));
+    for (const x of standings) x.place = 1 + standings.filter((o) => o.points > x.points).length;
+    const result = { standings, voterCount: (r.voterIds || []).length };
+    // A tie the old rules already settled stays settled, in the order shown back then.
+    const tie = cutTie(result, spotsFor(round));
+    if (tie) result.decider = { songIds: tie.songIds, spots: tie.spots, counts: {}, order: tie.songIds, byLot: false };
+    results[round] = result;
+  }
+  let s = { ...initialState, ...rest, v: SNAPSHOT_VERSION, votes, favorites: {}, results };
+  if (snap.phase === 'tiebreak') s = toReveal(s);
+  else if (snap.phase === 'reveal') s = { ...s, reveal: { step: revealSteps(results[snap.round]).length } };
+  return s;
 }
 
 function stripSnapshot(s) {
@@ -256,34 +320,46 @@ function stripSnapshot(s) {
 
 export function getActiveBallot(state) {
   const voters = state.voters.map((v) => ({ id: v.id, name: v.name, simple: !!v.simple }));
-  const base = { phase: state.phase, round: state.round, label: roundLabel(state), voters };
+  // `v` lets a phone notice that the TV runs a newer version, and reload itself.
+  const base = { v: SNAPSHOT_VERSION, phase: state.phase, round: state.round, label: roundLabel(state), voters };
   const songs = songMap(state);
   const info = (id) => {
     const s = songs[id] || {};
-    return { id, title: s.title || '', artist: s.artist || '', year: s.year || '', youtubeId: s.youtubeId || '', pickedBy: s.pickedBy || '' };
+    return {
+      id, title: s.title || '', artist: s.artist || '', year: s.year || '', released: s.released || '',
+      people: s.people || [], formed: s.formed || '', youtubeId: s.youtubeId || '', pickedBy: s.pickedBy || '',
+    };
   };
 
   if (state.phase === 'group' || state.phase === 'final') {
     const ids = songIdsForRound(state);
     if (ids.length) {
       const idx = Math.min(state.currentSongIndex, ids.length - 1);
-      const votes = {};
-      for (const id of ids) votes[id] = { ...((state.votes[state.round] || {})[id] || {}) };
+      // Codes, not stars: each phone can check its own votes but not read anyone else's.
+      const acks = {};
+      for (const id of ids) {
+        acks[id] = {};
+        for (const [vid, stars] of Object.entries((state.votes[state.round] || {})[id] || {})) acks[id][vid] = ackCode(vid, id, stars);
+      }
       const song = { ...info(ids[idx]), facts: (songs[ids[idx]] || {}).facts || [] };
-      return { ...base, kind: 'vote', song, songIndex: idx, songCount: ids.length, songIds: ids, votes };
+      return { ...base, kind: 'vote', song, songIndex: idx, songCount: ids.length, songIds: ids, acks };
     }
   }
-  if (state.phase === 'tiebreak') {
-    const questions = {};
-    for (const [vid, q] of Object.entries(currentTiebreaks(state))) {
-      questions[vid] = { stars: q.stars, again: q.picked > 0, options: q.options.map(info) };
+  if (state.phase === 'favorite') {
+    const tie = currentTie(state);
+    const result = state.results[state.round];
+    if (tie) {
+      return {
+        ...base,
+        kind: 'favorite',
+        options: tie.songIds.map(info),
+        spots: tie.spots,
+        askIds: state.roundVoters[state.round] || [],
+        answered: Object.keys(state.favorites[state.round] || {}),
+        decided: !!result.decider,
+      };
     }
-    return { ...base, kind: 'tiebreak', questions };
   }
-  if (state.phase === 'reveal') {
-    const beats = revealBeats(state);
-    const beat = state.reveal.step >= 0 ? beats[state.reveal.step] : null;
-    return { ...base, kind: 'reveal', started: state.reveal.step >= 0, beat: beat ? { kind: beat.kind, voterId: beat.voterId || null } : null };
-  }
+  if (state.phase === 'reveal') return { ...base, kind: 'reveal', started: state.reveal.step >= 0 };
   return { ...base, kind: 'wait' };
 }

@@ -131,6 +131,92 @@ export async function lookupVideo(videoId) {
   }
 }
 
+// ==================== SONG YEAR AND ARTIST AGE (Wikidata) ====================
+
+const WIKIDATA = 'https://www.wikidata.org/w/api.php';
+const HUMAN = 'Q5';
+const GROUP_TYPES = new Set(['Q215380', 'Q5741069', 'Q2088357', 'Q9212979', 'Q281643', 'Q641066', 'Q16887380', 'Q56816954', 'Q1802465']);
+const MUSIC_WORDS = /singer|rapper|musician|band|group|duo|\bdj\b|songwriter|producer|music|artist/i;
+
+async function wikidata(params) {
+  const q = new URLSearchParams({ ...params, format: 'json', origin: '*' });
+  const r = await fetch(WIKIDATA + '?' + q.toString());
+  if (!r.ok) throw new Error('wikidata ' + r.status);
+  return r.json();
+}
+const wdSearch = async (text, limit) => ((await wikidata({ action: 'wbsearchentities', search: text, language: 'en', type: 'item', limit: String(limit) })).search || []).map((h) => h.id);
+const wdEntities = async (ids) => (ids.length ? (await wikidata({ action: 'wbgetentities', ids: ids.join('|'), props: 'claims|labels|descriptions', languages: 'en' })).entities || {} : {});
+function claims(e, p) {
+  return ((e && e.claims && e.claims[p]) || []).map((c) => c.mainsnak && c.mainsnak.datavalue && c.mainsnak.datavalue.value).filter(Boolean);
+}
+const claimIds = (e, p) => claims(e, p).map((v) => v.id).filter(Boolean);
+// Wikidata time -> 'YYYY-MM-DD', 'YYYY-MM' or 'YYYY', as precise as it is stated.
+function claimDate(e, p) {
+  const v = claims(e, p).find((x) => x.time);
+  if (!v) return null;
+  const m = v.time.match(/^\+?(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  if (v.precision >= 11) return m[1] + '-' + m[2] + '-' + m[3];
+  if (v.precision === 10) return m[1] + '-' + m[2];
+  return m[1];
+}
+const enText = (e, k) => (e && e[k] && e[k].en && e[k].en.value) || '';
+
+// Look up when a song came out and who the artist is: a person (birth date) or a
+// band (year it was formed). Returns null when nothing trustworthy turns up.
+async function findArtist(name) {
+  const ids = await wdSearch(name, 7);
+  const ents = await wdEntities(ids);
+  for (const id of ids) {
+    const e = ents[id];
+    const kinds = new Set(claimIds(e, 'P31'));
+    const musical = MUSIC_WORDS.test(enText(e, 'descriptions'));
+    if (kinds.has(HUMAN) && musical) return { id, person: true, e };
+    if ([...kinds].some((k) => GROUP_TYPES.has(k)) || (musical && claims(e, 'P571').length)) return { id, person: false, e };
+  }
+  return null;
+}
+
+export async function lookupSongInfo(title, artist) {
+  const full = String(artist || '').trim();
+  // "Mark Ronson ft. Bruno Mars": try the whole name first, then the first artist.
+  const first = full.split(/\s+(?:ft\.?|feat\.?|featuring|x|med)\s+|\s+&\s+|,/i)[0].trim();
+  if (!title || !full) return null;
+  try {
+    let who = await findArtist(full);
+    if (!who && first && first !== full) who = await findArtist(first);
+    if (!who) return null;
+    const mainArtist = first || full;
+    const out = { year: '', released: '', people: [], formed: '' };
+    if (who.person) {
+      const born = claimDate(who.e, 'P569');
+      if (born) out.people = [{ name: enText(who.e, 'labels') || mainArtist, born, died: claimDate(who.e, 'P570') || undefined }];
+    } else {
+      out.formed = (claimDate(who.e, 'P571') || '').slice(0, 4);
+    }
+    // The song: an item with this artist as performer. A music video beats a
+    // single, which beats the song itself (a cover's song item has the original year).
+    const sIds = await wdSearch(title, 15);
+    const sEnts = await wdEntities(sIds);
+    const rank = (e) => {
+      const d = enText(e, 'descriptions').toLowerCase();
+      const kinds = claimIds(e, 'P31');
+      if (d.includes('music video') || kinds.includes('Q193977')) return 3;
+      if (d.includes('single') || kinds.includes('Q134556')) return 2;
+      return 1;
+    };
+    const matches = sIds.map((id) => sEnts[id]).filter((e) => e && claimIds(e, 'P175').includes(who.id) && claimDate(e, 'P577'));
+    matches.sort((a, b) => rank(b) - rank(a) || (claimDate(a, 'P577') < claimDate(b, 'P577') ? -1 : 1));
+    if (matches.length) {
+      out.released = claimDate(matches[0], 'P577');
+      out.year = out.released.slice(0, 4);
+    }
+    return out.year || out.people.length || out.formed ? out : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export const thumbUrl = (videoId, quality = 'mqdefault') => 'https://i.ytimg.com/vi/' + videoId + '/' + quality + '.jpg';
 
 // Keep the screen awake during the show (phones and the TV laptop).

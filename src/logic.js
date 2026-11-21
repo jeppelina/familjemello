@@ -26,11 +26,14 @@ export const GROUP_THEMES = [
 export const FINAL_THEME = { name: 'Finalen', emoji: '🏆', tagline: 'Bara de bästa är kvar!', accent: '#f59e0b', accentRgb: '245,158,11' };
 export const getGroupTheme = (g) => GROUP_THEMES[((g % GROUP_THEMES.length) + GROUP_THEMES.length) % GROUP_THEMES.length];
 
+// Votes are 1 to 10 stars.
+export const STAR_MAX = 10;
+
 // Big emoji buttons for the youngest voters, mapped onto the star scale.
 export const SIMPLE_CHOICES = [
-  { stars: 5, emoji: '😍', label: 'Älskar den!' },
-  { stars: 3, emoji: '🙂', label: 'Bra' },
-  { stars: 1, emoji: '😴', label: 'Inte min grej' },
+  { stars: 10, emoji: '😍', label: 'Älskar den!' },
+  { stars: 6, emoji: '🙂', label: 'Bra' },
+  { stars: 2, emoji: '😴', label: 'Inte min grej' },
 ];
 export function simpleChoiceFor(stars) {
   if (!stars) return null;
@@ -176,30 +179,7 @@ export function assignGroups(songs, rng = Math.random) {
   return { groupCount, songs: shuffle(placed, rng) };
 }
 
-// ==================== RANKING A VOTER'S STARS ====================
-
-// stars: { songId: 1..5 }. picks: songIds this voter picked in tiebreak questions, in order.
-// Returns the voter's full order (best first) and the first open tie, if any:
-// question = { stars, options: [songIds that still share the same stars] }.
-export function rankForVoter(songIds, stars, picks = []) {
-  const pickIdx = new Map(picks.map((id, i) => [id, i]));
-  const levels = new Map();
-  for (const id of songIds) {
-    const s = stars[id] || 0;
-    if (!levels.has(s)) levels.set(s, []);
-    levels.get(s).push(id);
-  }
-  const order = [];
-  let question = null;
-  for (const lv of [...levels.keys()].sort((a, b) => b - a)) {
-    const ids = levels.get(lv);
-    const picked = ids.filter((id) => pickIdx.has(id)).sort((a, b) => pickIdx.get(a) - pickIdx.get(b));
-    const open = ids.filter((id) => !pickIdx.has(id));
-    order.push(...picked, ...open);
-    if (open.length >= 2 && !question) question = { stars: lv, options: open, picked: picked.length };
-  }
-  return { order, question };
-}
+// ==================== FROM STARS TO POINTS ====================
 
 export function starsOf(votesForRound, songIds, voterId) {
   const out = {};
@@ -211,115 +191,189 @@ export function hasVotedAll(votesForRound, songIds, voterId) {
   return songIds.every((id) => ((votesForRound || {})[id] || {})[voterId] != null);
 }
 
-// { voterId: question } for every voter who still has a tie to break.
-export function pendingTiebreaks(songIds, voterIds, votesForRound, picksForRound) {
+// One voter's stars become Mello points by rank. Songs with equal stars share the
+// place and both get its points: two favourites both get 12, the next song gets 8.
+export function pointsForVoter(songIds, stars) {
   const out = {};
-  for (const vid of voterIds) {
-    const { question } = rankForVoter(songIds, starsOf(votesForRound, songIds, vid), (picksForRound || {})[vid] || []);
-    if (question) out[vid] = question;
+  for (const id of songIds) {
+    const mine = stars[id] || 0;
+    out[id] = pointsForRank(songIds.filter((o) => (stars[o] || 0) > mine).length);
   }
   return out;
 }
 
-// Settle every remaining tie for one voter at random (the "🎲 Slumpa" button).
-export function randomFillPicks(songIds, stars, picks = [], rng = Math.random) {
-  const out = [...picks];
-  for (let guard = 0; guard < songIds.length + 1; guard++) {
-    const { question } = rankForVoter(songIds, stars, out);
-    if (!question) break;
-    out.push(question.options[Math.floor(rng() * question.options.length)]);
-  }
-  return out;
-}
-
-// ==================== SCORING A ROUND ====================
-
-// Ties between songs are broken by: more points, then more 12s, more 10s, ... ,
-// then more stars in total, and only then by drawing lots (flagged as tiedAbove).
-export function scoreRound(songIds, voterIds, votesForRound, picksForRound, rng = Math.random) {
-  const awards = {};
+// Only totals are kept: how many of each score every song got, never who gave it.
+// Songs with equal points share their place; ties keep the running order.
+export function scoreRound(songIds, voterIds, votesForRound) {
   const tot = {};
-  for (const id of songIds) tot[id] = { songId: id, points: 0, stars: 0, counts: {} };
+  for (const id of songIds) tot[id] = { songId: id, points: 0, counts: {} };
   for (const vid of voterIds) {
-    const stars = starsOf(votesForRound, songIds, vid);
-    let picks = (picksForRound || {})[vid] || [];
-    if (rankForVoter(songIds, stars, picks).question) picks = randomFillPicks(songIds, stars, picks, rng);
-    const { order } = rankForVoter(songIds, stars, picks);
-    awards[vid] = order.map((id, i) => ({ songId: id, points: pointsForRank(i) }));
-    for (const a of awards[vid]) {
-      tot[a.songId].points += a.points;
-      tot[a.songId].counts[a.points] = (tot[a.songId].counts[a.points] || 0) + 1;
+    const pts = pointsForVoter(songIds, starsOf(votesForRound, songIds, vid));
+    for (const id of songIds) {
+      tot[id].points += pts[id];
+      tot[id].counts[pts[id]] = (tot[id].counts[pts[id]] || 0) + 1;
     }
-    for (const id of songIds) tot[id].stars += stars[id];
   }
-  const keyOf = (t) => [t.points, ...MELLO_POINTS.map((p) => t.counts[p] || 0), t.stars];
-  const lot = {};
-  for (const id of songIds) lot[id] = rng();
-  const cmpKeys = (a, b) => {
-    const ka = keyOf(a);
-    const kb = keyOf(b);
-    for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i];
-    return 0;
-  };
-  const sorted = Object.values(tot).sort((a, b) => cmpKeys(a, b) || lot[b.songId] - lot[a.songId]);
-  const standings = sorted.map((t, i) => ({
+  const idx = new Map(songIds.map((id, i) => [id, i]));
+  const sorted = Object.values(tot).sort((a, b) => b.points - a.points || idx.get(a.songId) - idx.get(b.songId));
+  const standings = sorted.map((t) => ({
     songId: t.songId,
     points: t.points,
-    stars: t.stars,
-    twelves: t.counts[12] || 0,
-    tiedAbove: i > 0 && cmpKeys(sorted[i - 1], t) === 0,
+    place: 1 + sorted.filter((o) => o.points > t.points).length,
+    counts: t.counts,
   }));
-  return { standings, awards, voterIds: [...voterIds] };
+  return { standings, voterCount: voterIds.length };
+}
+
+// ==================== TIES THAT MATTER ====================
+
+// A tie only matters on the line between going to the final and going out (in a
+// group), or for first place (in the final). Returns the tied songs and how many
+// of them get through, or null.
+export function cutTie(result, spots) {
+  const st = (result && result.standings) || [];
+  if (st.length <= spots) return null;
+  const edge = st[spots - 1].points;
+  if (st[spots].points !== edge) return null;
+  const songIds = st.filter((s) => s.points === edge).map((s) => s.songId);
+  return { songIds, spots: spots - st.filter((s) => s.points > edge).length };
+}
+
+// The favourite vote: everyone picks one of the tied songs. Most votes takes the
+// open spots. If the favourite vote is level as well, the lot decides (byLot).
+export function decideTie(tie, favourites, rng = Math.random) {
+  const counts = {};
+  for (const id of tie.songIds) counts[id] = 0;
+  for (const sid of Object.values(favourites || {})) if (sid in counts) counts[sid] += 1;
+  const lot = {};
+  for (const id of tie.songIds) lot[id] = rng();
+  const order = [...tie.songIds].sort((a, b) => counts[b] - counts[a] || lot[b] - lot[a]);
+  const byLot = counts[order[tie.spots - 1]] === counts[order[tie.spots]];
+  return { songIds: [...tie.songIds], spots: tie.spots, counts, order, byLot };
+}
+
+// Final order of a round, with places. A decided tie splits its songs into the ones
+// that got through (own places) and the rest (who still share a place).
+export function placesOf(result) {
+  if (!result) return [];
+  const st = result.standings;
+  const d = result.decider;
+  if (!d) return st.map((s) => ({ ...s }));
+  const tied = new Set(d.songIds);
+  const first = st.findIndex((s) => tied.has(s.songId));
+  const bySong = Object.fromEntries(st.map((s) => [s.songId, s]));
+  const block = d.order.map((id, i) => ({ ...bySong[id], place: st[first].place + Math.min(i, d.spots) }));
+  return [...st.slice(0, first), ...block, ...st.slice(first + block.length)];
 }
 
 export function qualifiersOf(result) {
-  return result ? result.standings.slice(0, QUALIFIERS_PER_GROUP).map((s) => s.songId) : [];
+  return placesOf(result).slice(0, QUALIFIERS_PER_GROUP).map((s) => s.songId);
 }
 
 // ==================== THE REVEAL ====================
 
-// One voter at a time, like the real thing: small points together, then 10,
-// then a drumroll ("och våra 12 poäng går till...") and the 12.
-export function buildRevealBeats(result) {
-  const beats = [];
-  if (!result) return [{ kind: 'done', awards: [] }];
-  for (const vid of result.voterIds) {
-    const aw = (result.awards[vid] || []).filter((a) => a.points > 0);
-    const low = aw.filter((a) => a.points < 10).sort((a, b) => a.points - b.points);
-    const ten = aw.find((a) => a.points === 10);
-    const twelve = aw.find((a) => a.points === 12);
-    beats.push({ kind: 'voter', voterId: vid, awards: low });
-    if (ten) beats.push({ kind: 'ten', voterId: vid, awards: [ten] });
-    if (twelve) {
-      beats.push({ kind: 'twelvePending', voterId: vid, awards: [] });
-      beats.push({ kind: 'twelve', voterId: vid, awards: [twelve] });
-    }
+// Points are handed out one score at a time, all voters together, so nobody's votes
+// are shown: first the small ones, then every 6, every 8, every 12. Each voter gives
+// each song exactly one score, so the last score to come out can be worked out from
+// what is left. That is why the 12s come second to last, while they are still a
+// surprise, and the 10s fill up the rest.
+export function revealSteps(result) {
+  const values = new Set();
+  for (const s of (result && result.standings) || []) {
+    for (const [p, n] of Object.entries(s.counts)) if (n > 0) values.add(Number(p));
   }
-  beats.push({ kind: 'done', awards: [] });
-  return beats;
+  const groups = [];
+  const low = [...values].filter((p) => p < 6).sort((a, b) => a - b);
+  if (low.length) groups.push(low);
+  for (const p of [6, 8, 12, 10]) if (values.has(p)) groups.push([p]);
+  const other = [...values].filter((p) => p > 12).sort((a, b) => a - b);
+  if (other.length) groups.push(other);
+  return groups.map((vals, i) => {
+    const chips = [];
+    for (const s of result.standings) for (const v of vals) for (let k = 0; k < (s.counts[v] || 0); k++) chips.push({ songId: s.songId, points: v });
+    return { values: vals, chips, last: i === groups.length - 1 };
+  });
 }
 
-export function totalsAfter(beats, step, songIds) {
+// Points per song after the first `n` reveal steps.
+export function totalsAfterSteps(steps, n, songIds) {
   const t = {};
   for (const id of songIds) t[id] = 0;
-  for (let i = 0; i <= step && i < beats.length; i++) for (const a of beats[i].awards) t[a.songId] = (t[a.songId] || 0) + a.points;
+  for (let i = 0; i < n && i < steps.length; i++) for (const c of steps[i].chips) t[c.songId] = (t[c.songId] || 0) + c.points;
   return t;
 }
 
-// Scoreboard order: points so far, ties in `tieOrder`. During the reveal pass the
-// running order (so equal scores never leak the final result); at the end pass
-// the final standings, which already include every tiebreak.
+// Scoreboard order: points so far, ties in `tieOrder` (the running order), so the
+// order on screen never gives away anything that has not been shown yet.
 export function runningOrder(tieOrder, totals) {
   const idx = new Map(tieOrder.map((id, i) => [id, i]));
   return [...tieOrder].sort((a, b) => (totals[b] || 0) - (totals[a] || 0) || idx.get(a) - idx.get(b));
 }
 
-// Why did the song above win a tie on points? Returns null when it had more points.
-export function tieReason(above, below) {
-  if (!above || !below || above.points !== below.points) return null;
-  if (below.tiedAbove) return 'lot';
-  if (above.twelves !== below.twelves) return 'twelves';
-  return 'higher';
+// Phones are told that their vote arrived without being told anyone's stars:
+// the ballot carries this short code instead, and a phone checks its own value.
+export function ackCode(voterId, songId, stars) {
+  let h = 2166136261;
+  const str = voterId + '|' + songId + '|' + stars;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+export function starsFromAck(ack, voterId, songId) {
+  if (!ack) return 0;
+  for (let s = 1; s <= STAR_MAX; s++) if (ackCode(voterId, songId, s) === ack) return s;
+  return 0;
+}
+
+// ==================== YEARS AND AGES ====================
+
+function parseDate(str) {
+  const m = String(str || '').match(/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/);
+  return m ? { y: +m[1], m: m[2] ? +m[2] : null, d: m[3] ? +m[3] : null } : null;
+}
+
+export const isoDay = (date) => {
+  const d = date || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+
+// Whole years from `born` to `when` (dates as 'YYYY', 'YYYY-MM' or 'YYYY-MM-DD').
+// A missing month or day is taken as mid-year; `exact` says whether that mattered.
+export function ageAt(born, when) {
+  const b = parseDate(born);
+  const w = parseDate(when);
+  if (!b || !w) return null;
+  const bm = b.m || 7;
+  const bd = b.d || 1;
+  const wm = w.m || 7;
+  const wd = w.d || 15;
+  let years = w.y - b.y;
+  if (wm < bm || (wm === bm && wd < bd)) years -= 1;
+  const exact = !!(b.m && b.d && w.m && (w.d || w.m !== b.m));
+  return { years, exact };
+}
+
+// What the song card says about time: the year, how long ago, how old the artist was.
+export function songTimeInfo(song, today = isoDay()) {
+  if (!song) return null;
+  const year = parseInt(song.year, 10) || (parseDate(song.released) || {}).y || null;
+  const nowY = parseDate(today).y;
+  const ago = year ? nowY - year : null;
+  const when = song.released || (year ? String(year) : null);
+  const people = (song.people || []).filter((p) => p && p.name && p.born).map((p) => ({
+    name: p.name,
+    then: when ? ageAt(p.born, when) : null,
+    now: p.died ? null : ageAt(p.born, today),
+  }));
+  return { year, ago, people, formed: song.formed || null };
+}
+
+export function agoText(ago) {
+  if (ago == null) return '';
+  if (ago <= 0) return 'i år';
+  return ago === 1 ? 'förra året' : ago + ' år sedan';
 }
 
 // ==================== AWARDS AND ESTIMATES ====================

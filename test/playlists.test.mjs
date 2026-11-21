@@ -13,6 +13,9 @@ test('playlists: 16 distinct videos each, highlights set, facts short and tidy',
       assert.match(s.youtubeId, /^[A-Za-z0-9_-]{11}$/, s.title);
       assert.ok(s.highlightStart > 0, s.title + ' needs a highlight');
       assert.match(s.year, /^(19|20)\d\d$/, s.title);
+      if (s.released) assert.equal(s.released.slice(0, 4), s.year, s.title + ': released matches the year');
+      assert.ok(s.people && s.people.length, s.title + ' needs an artist age');
+      for (const person of s.people) assert.match(person.born, /^\d{4}-\d{2}-\d{2}$/, s.title + ': ' + person.name);
       for (const f of s.facts || []) {
         assert.ok(f.length <= 200, s.title + ': fact too long for the screen');
         assert.ok(!/[—–]/.test(f), s.title + ': no long dashes in facts');
@@ -28,6 +31,7 @@ test('loading a playlist gives songs with facts, and phones get the facts', () =
   assert.equal(reducer(initialState, { type: 'LOAD_PLAYLIST', id: 'nope' }), initialState);
   s = reducer(s, { type: 'ADD_VOTER', id: 'v0', name: 'Mamma' });
   s = reducer(s, { type: 'START_TOURNAMENT', rng: seeded(2) });
+  s = reducer(s, { type: 'LINEUP_DONE' });
   s = reducer(s, { type: 'START_ROUND' });
   const b = getActiveBallot(s);
   assert.equal(b.kind, 'vote');

@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  assignGroups, buildRevealBeats, cleanVideoTitle, estimateMinutes, extractStartTime, extractYouTubeId,
-  formatDuration, pickerTable, tieReason, planGroups, randomFillPicks, rankForVoter, runningOrder, scoreRound, totalsAfter,
+  ackCode, ageAt, agoText, assignGroups, cleanVideoTitle, cutTie, decideTie, estimateMinutes, extractStartTime,
+  extractYouTubeId, formatDuration, pickerTable, placesOf, planGroups, pointsForVoter, qualifiersOf, revealSteps,
+  runningOrder, scoreRound, songTimeInfo, starsFromAck, totalsAfterSteps,
 } from '../src/logic.js';
 import { seeded } from './helpers.mjs';
 
@@ -41,69 +42,101 @@ test('assignGroups spreads each person\'s picks across groups', () => {
   assert.deepEqual(sizes, [3, 3, 4]);
 });
 
-test('rankForVoter asks about ties until the order is complete', () => {
+const votesFrom = (table) => {
+  // table: { voterId: { songId: stars } } -> votes[songId][voterId]
+  const v = {};
+  for (const [vid, row] of Object.entries(table)) for (const [sid, st] of Object.entries(row)) (v[sid] = v[sid] || {})[vid] = st;
+  return v;
+};
+
+test('equal stars share the place and both get its points', () => {
   const ids = ['a', 'b', 'c', 'd'];
-  const stars = { a: 5, b: 5, c: 5, d: 2 };
-  let r = rankForVoter(ids, stars, []);
-  assert.deepEqual(r.question.options, ['a', 'b', 'c']);
-  r = rankForVoter(ids, stars, ['b']);
-  assert.deepEqual(r.question.options, ['a', 'c']);
-  assert.equal(r.question.picked, 1);
-  r = rankForVoter(ids, stars, ['b', 'c']);
-  assert.equal(r.question, null);
-  assert.deepEqual(r.order, ['b', 'c', 'a', 'd']);
-  assert.equal(rankForVoter(ids, { a: 1, b: 2, c: 3, d: 4 }, []).question, null);
+  assert.deepEqual(pointsForVoter(ids, { a: 9, b: 7, c: 5, d: 2 }), { a: 12, b: 10, c: 8, d: 6 });
+  assert.deepEqual(pointsForVoter(ids, { a: 9, b: 9, c: 5, d: 2 }), { a: 12, b: 12, c: 8, d: 6 });
+  assert.deepEqual(pointsForVoter(ids, { a: 9, b: 7, c: 5, d: 5 }), { a: 12, b: 10, c: 8, d: 8 });
+  assert.deepEqual(pointsForVoter(ids, { a: 3, b: 3, c: 3, d: 3 }), { a: 12, b: 12, c: 12, d: 12 });
+  const eight = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  const pts = pointsForVoter(eight, { a: 10, b: 9, c: 8, d: 7, e: 6, f: 5, g: 4, h: 3 });
+  assert.deepEqual(eight.map((x) => pts[x]), [12, 10, 8, 6, 4, 2, 1, 0]);
 });
 
-test('randomFillPicks settles every tie', () => {
-  const ids = ['a', 'b', 'c', 'd', 'e'];
-  const stars = { a: 5, b: 5, c: 3, d: 3, e: 3 };
-  const picks = randomFillPicks(ids, stars, [], seeded(9));
-  assert.equal(rankForVoter(ids, stars, picks).question, null);
-});
-
-test('scoreRound gives Mello points per voter and breaks ties by twelves, then stars, then lots', () => {
+test('scoreRound keeps only totals and counts, and equal points share a place', () => {
   const ids = ['a', 'b', 'c', 'd'];
-  const votes = {
-    a: { v1: 5, v2: 4 },
-    b: { v1: 4, v2: 5 },
-    c: { v1: 3, v2: 3 },
-    d: { v1: 1, v2: 1 },
-  };
-  const r = scoreRound(ids, ['v1', 'v2'], votes, {}, seeded(1));
-  assert.deepEqual(r.awards.v1.map((x) => x.points), [12, 10, 8, 6]);
-  const pts = Object.fromEntries(r.standings.map((s) => [s.songId, s.points]));
-  assert.deepEqual(pts, { a: 22, b: 22, c: 16, d: 12 });
-  // a and b: same points, one 12 each, same stars: only the lot separates them.
-  assert.equal(r.standings[1].tiedAbove, true);
-  assert.equal(r.standings[2].tiedAbove, false);
-  assert.equal(tieReason(r.standings[0], r.standings[1]), 'lot');
-  assert.equal(tieReason(r.standings[1], r.standings[2]), null);
-
-  const votes2 = { a: { v1: 5, v2: 5, v3: 1 }, b: { v1: 4, v2: 4, v3: 5 }, c: { v1: 1, v2: 1, v3: 4 } };
-  const r2 = scoreRound(['a', 'b', 'c'], ['v1', 'v2', 'v3'], votes2, {}, seeded(2));
-  // a: 12+12+8 = 32, b: 10+10+12 = 32, c: 8+8+10 = 26 -> a has two 12s and wins without a lot.
-  assert.deepEqual(r2.standings.map((s) => s.songId), ['a', 'b', 'c']);
-  assert.equal(r2.standings[1].tiedAbove, false);
-  assert.equal(tieReason(r2.standings[0], r2.standings[1]), 'twelves');
+  const votes = votesFrom({
+    v0: { a: 10, b: 8, c: 6, d: 4 }, // a12 b10 c8 d6
+    v1: { a: 5, b: 9, c: 9, d: 1 }, // b12 c12 a8 d6
+    v2: { a: 7, b: 3, c: 8, d: 2 }, // c12 a10 b8 d6
+  });
+  const r = scoreRound(ids, ['v0', 'v1', 'v2'], votes);
+  assert.deepEqual(r.standings.map((x) => [x.songId, x.points, x.place]), [['c', 32, 1], ['a', 30, 2], ['b', 30, 2], ['d', 18, 4]]);
+  assert.deepEqual(r.standings[0].counts, { 8: 1, 12: 2 });
+  assert.equal(r.voterCount, 3);
+  assert.equal(JSON.stringify(r).includes('v0'), false, 'nothing in the result says who gave what');
 });
 
-test('reveal beats add up to the final standings', () => {
-  const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-  const rng = seeded(4);
-  const votes = {};
-  for (const id of ids) votes[id] = { v1: 1 + Math.floor(rng() * 5), v2: 1 + Math.floor(rng() * 5), v3: 1 + Math.floor(rng() * 5) };
-  const r = scoreRound(ids, ['v1', 'v2', 'v3'], votes, {}, rng);
-  const beats = buildRevealBeats(r);
-  assert.deepEqual(beats.slice(0, 4).map((b) => b.kind), ['voter', 'ten', 'twelvePending', 'twelve']);
-  assert.equal(beats[beats.length - 1].kind, 'done');
-  const totals = totalsAfter(beats, beats.length - 1, ids);
-  for (const s of r.standings) assert.equal(totals[s.songId], s.points);
-  const finalIds = r.standings.map((s) => s.songId);
-  assert.deepEqual(runningOrder(finalIds, totals), finalIds);
-  // Before anything is revealed, the board keeps the running order (no leaks).
-  assert.deepEqual(runningOrder(ids, totalsAfter(beats, -1, ids)), ids);
-  assert.ok(beats[0].awards.every((a) => a.points < 10 && a.points > 0));
+test('only a tie on the line that matters needs a favourite vote', () => {
+  const mk = (pts) => ({ standings: pts.map((p, i) => ({ songId: 'abcdefgh'[i], points: p, place: 1 + pts.filter((q) => q > p).length, counts: {} })) });
+  assert.equal(cutTie(mk([40, 30, 20, 20]), 2), null, 'a tie for third does not matter in a group');
+  assert.deepEqual(cutTie(mk([40, 30, 30, 20]), 2), { songIds: ['b', 'c'], spots: 1 });
+  assert.deepEqual(cutTie(mk([30, 30, 30, 20]), 2), { songIds: ['a', 'b', 'c'], spots: 2 });
+  assert.equal(cutTie(mk([40, 30, 30]), 1), null, 'second place shared in the final is fine');
+  assert.deepEqual(cutTie(mk([40, 40, 30]), 1), { songIds: ['a', 'b'], spots: 1 });
+
+  const r = mk([40, 30, 30, 30]);
+  const tie = cutTie(r, 2);
+  const d = decideTie(tie, { v0: 'd', v1: 'd', v2: 'b', v3: 'nope' });
+  assert.deepEqual(d.order, ['d', 'b', 'c']);
+  assert.equal(d.byLot, false);
+  r.decider = d;
+  assert.deepEqual(placesOf(r).map((x) => [x.songId, x.place]), [['a', 1], ['d', 2], ['b', 3], ['c', 3]]);
+  assert.deepEqual(qualifiersOf(r), ['a', 'd']);
+
+  const level = decideTie({ songIds: ['x', 'y'], spots: 1 }, { v0: 'x', v1: 'y' }, () => 0.5);
+  assert.equal(level.byLot, true);
+});
+
+test('the reveal goes 6, 8, 12 and then 10, and adds up to the result', () => {
+  const ids = ['a', 'b', 'c', 'd'];
+  const votes = votesFrom({ v0: { a: 10, b: 8, c: 6, d: 4 }, v1: { a: 5, b: 9, c: 9, d: 1 }, v2: { a: 7, b: 3, c: 8, d: 2 } });
+  const r = scoreRound(ids, ['v0', 'v1', 'v2'], votes);
+  const steps = revealSteps(r);
+  assert.deepEqual(steps.map((x) => x.values), [[6], [8], [12], [10]]);
+  assert.ok(steps[3].last);
+  const all = totalsAfterSteps(steps, steps.length, ids);
+  for (const st of r.standings) assert.equal(all[st.songId], st.points);
+  for (const id of ids) assert.equal(steps.flatMap((x) => x.chips).filter((c) => c.songId === id).length, 3, 'one chip per voter per song');
+  assert.deepEqual(runningOrder(ids, totalsAfterSteps(steps, 0, ids)), ids, 'before anything is shown: running order');
+
+  const eight = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  const f = scoreRound(eight, ['v0'], votesFrom({ v0: { a: 10, b: 9, c: 8, d: 7, e: 6, f: 5, g: 4, h: 3 } }));
+  assert.deepEqual(revealSteps(f).map((x) => x.values), [[0, 1, 2, 4], [6], [8], [12], [10]]);
+});
+
+test('phones get a code per vote that only checks out for the right stars', () => {
+  const code = ackCode('p_1', 's9', 7);
+  assert.equal(starsFromAck(code, 'p_1', 's9'), 7);
+  assert.equal(starsFromAck(code, 'p_2', 's9'), 0);
+  assert.equal(starsFromAck(undefined, 'p_1', 's9'), 0);
+  assert.notEqual(code, '7');
+});
+
+test('years ago and the artist\'s age', () => {
+  assert.deepEqual(ageAt('1958-08-29', '1988-10-24'), { years: 30, exact: true });
+  assert.deepEqual(ageAt('1965-11-21', '1995-11-13'), { years: 29, exact: true });
+  assert.deepEqual(ageAt('1965-11-21', '1995-11'), { years: 29, exact: false }, 'same month, day unknown');
+  assert.deepEqual(ageAt('1958-08-29', '1988-10'), { years: 30, exact: true }, 'a different month is enough');
+  assert.equal(ageAt('1958-08-29', '1988').exact, false);
+  assert.equal(ageAt(null, '1988'), null);
+  const mj = songTimeInfo({ year: '1988', released: '1988-10-24', people: [{ name: 'Michael Jackson', born: '1958-08-29', died: '2009-06-25' }] }, '2026-11-21');
+  assert.equal(mj.ago, 38);
+  assert.deepEqual(mj.people[0].then, { years: 30, exact: true });
+  assert.equal(mj.people[0].now, null, 'no "today" age for someone who has died');
+  const pg = songTimeInfo({ year: '1986', people: [{ name: 'Peter Gabriel', born: '1950-02-13' }] }, '2026-11-21');
+  assert.equal(pg.people[0].now.years, 76);
+  assert.equal(songTimeInfo({ title: 'x' }, '2026-11-21').year, null);
+  assert.equal(agoText(38), '38 år sedan');
+  assert.equal(agoText(1), 'förra året');
+  assert.equal(agoText(0), 'i år');
 });
 
 test('YouTube links: ids, start times and title cleanup', () => {

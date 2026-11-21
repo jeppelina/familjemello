@@ -1,24 +1,32 @@
 // Small shared components used by both the host (TV) and the phone views.
-import { SIMPLE_CHOICES, simpleChoiceFor } from './logic.js';
+import { agoText, SIMPLE_CHOICES, simpleChoiceFor, songTimeInfo, STAR_MAX } from './logic.js';
 import { thumbUrl } from './net.js';
 
 const { useEffect, useRef, useState } = React;
 
+// Ten stars. The hover preview only follows a real mouse: on a phone a tap leaves a
+// "hover" behind, which used to show the last song's stars on the next song.
 export function StarRating({ value, onChange, big }) {
   const [hover, setHover] = useState(0);
+  const shown = hover || value || 0;
+  const enter = (n) => (e) => { if (e.pointerType === 'mouse') setHover(n); };
   return (
-    <div className={'stars' + (big ? ' stars-big' : '')} role="radiogroup" aria-label="Betyg">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          className={'star' + (n <= (hover || value) ? ' active' : '')}
-          onClick={() => onChange(n)}
-          onMouseEnter={() => setHover(n)}
-          onMouseLeave={() => setHover(0)}
-          aria-label={n + ' stjärnor'}
-        >⭐</button>
-      ))}
+    <div className={'stars-wrap' + (big ? ' big' : '')}>
+      <div className={'stars' + (big ? ' stars-big' : '')} role="radiogroup" aria-label="Betyg" onPointerLeave={() => setHover(0)}>
+        {Array.from({ length: STAR_MAX }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={'star' + (n <= shown ? ' active' : '')}
+            onClick={() => { setHover(0); onChange(n); }}
+            onPointerEnter={enter(n)}
+            aria-label={n + ' av ' + STAR_MAX}
+            aria-checked={n === value}
+            role="radio"
+          >★</button>
+        ))}
+      </div>
+      <span className={'stars-num' + (value ? '' : ' empty')}>{shown ? shown + '/' + STAR_MAX : '–/' + STAR_MAX}</span>
     </div>
   );
 }
@@ -42,12 +50,29 @@ export function VoteInput({ simple, value, onChange, big }) {
   return simple ? <EmojiRating value={value} onChange={onChange} big={big} /> : <StarRating value={value} onChange={onChange} big={big} />;
 }
 
-export function StarsText({ stars, simple }) {
-  if (simple) {
-    const c = simpleChoiceFor(stars);
-    return <span>{c ? c.emoji : ''}</span>;
+// Year, how long ago, and how old the artist was: the kids' favourite questions.
+export function SongMeta({ song, compact, center }) {
+  const info = songTimeInfo(song);
+  if (!info) return null;
+  const pills = [];
+  pills.push(
+    <span key="y" className={'meta-pill' + (info.year ? ' year' : ' missing')}>
+      📅 {info.year ? info.year + ' · ' + agoText(info.ago) : 'År okänt'}
+    </span>,
+  );
+  if (!compact) {
+    for (const p of info.people.slice(0, 3)) {
+      if (!p.then) continue;
+      const then = (p.then.exact ? '' : 'ca ') + p.then.years + ' år';
+      pills.push(
+        <span key={'p' + p.name} className="meta-pill age">
+          🎂 {p.name} var {then}{p.now ? ' (idag ' + p.now.years + ')' : ''}
+        </span>,
+      );
+    }
+    if (!info.people.length && info.formed) pills.push(<span key="f" className="meta-pill age">🎸 Bandet bildades {info.formed}</span>);
   }
-  return <span className="stars-text">{'⭐'.repeat(Math.max(0, stars || 0))}</span>;
+  return <div className={'song-meta-line' + (center ? ' center' : '') + (compact ? ' compact' : '')}>{pills}</div>;
 }
 
 export function Thumb({ videoId, className, alt }) {

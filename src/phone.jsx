@@ -1,7 +1,9 @@
-// The phone view (?game=CODE): vote, break your ties, and press for your 12 points.
+// The phone view (?game=CODE): vote on each song, and pick a favourite when a tie
+// decides who goes on. A phone only ever learns its own votes.
 import { closeChannel, getJSON, keepAwake, openGameChannel, setJSON } from './net.js';
-import { genId } from './logic.js';
-import { StarsText, Thumb, VoteInput } from './ui.jsx';
+import { genId, starsFromAck } from './logic.js';
+import { SNAPSHOT_VERSION } from './state.js';
+import { SongMeta, Thumb, VoteInput } from './ui.jsx';
 
 const { useState, useEffect, useRef } = React;
 
@@ -13,9 +15,7 @@ export function PhoneGame({ code }) {
   const [parts, setParts] = useState(() => getJSON('mello_parts_' + code, []));
   const [name, setName] = useState('');
   const [pending, setPending] = useState({}); // voteKey -> stars, until the host confirms
-  const [tbSent, setTbSent] = useState({}); // partId -> question signature we answered
-  const [tbAnsweredRound, setTbAnsweredRound] = useState(null);
-  const [pressed, setPressed] = useState(null); // beat we pressed "12 points" for
+  const [favSent, setFavSent] = useState({}); // round|partId -> songId we picked
   const chRef = useRef(null);
   const partsRef = useRef(parts);
   partsRef.current = parts;
@@ -39,7 +39,16 @@ export function PhoneGame({ code }) {
   useEffect(() => {
     const ch = openGameChannel(code);
     if (!ch) { setStatus('error'); return undefined; }
-    ch.on('broadcast', { event: 'ballot' }, ({ payload }) => { if (payload) setBallot(payload); });
+    ch.on('broadcast', { event: 'ballot' }, ({ payload }) => {
+      if (!payload) return;
+      // The TV runs a newer version than this page: reload once to get it.
+      if (payload.v && payload.v !== SNAPSHOT_VERSION) {
+        let tried = false;
+        try { tried = sessionStorage.getItem('mello_reloaded') === String(payload.v); sessionStorage.setItem('mello_reloaded', String(payload.v)); } catch (e) { /* ignore */ }
+        if (!tried) { window.location.reload(); return; }
+      }
+      setBallot(payload);
+    });
     ch.on('broadcast', { event: 'rollcall' }, () => registerAll());
     ch.on('broadcast', { event: 'kick' }, ({ payload }) => {
       if (payload && payload.id) persistParts(partsRef.current.filter((p) => p.id !== payload.id));
@@ -78,7 +87,7 @@ export function PhoneGame({ code }) {
       for (const [k, stars] of Object.entries(p)) {
         const [round, songId, partId] = k.split('|');
         const live = ballot.kind === 'vote' && ballot.round === round;
-        const confirmed = live && ballot.votes && ballot.votes[songId] && ballot.votes[songId][partId] === stars;
+        const confirmed = live && starsFromAck(((ballot.acks || {})[songId] || {})[partId], partId, songId) === stars;
         if (!live || confirmed) { delete next[k]; changed = true; }
       }
       return changed ? next : p;
@@ -89,10 +98,18 @@ export function PhoneGame({ code }) {
   }, [ballot]);
 
   // Resend anything the host has not confirmed yet.
+  const favRef = useRef(favSent);
+  favRef.current = favSent;
   useEffect(() => {
     let ticks = 0;
     const t = setInterval(() => {
       const b = ballotRef.current;
+      if (b && b.kind === 'favorite' && !b.decided) {
+        for (const [k, songId] of Object.entries(favRef.current)) {
+          const [round, partId] = k.split('|');
+          if (round === b.round && !(b.answered || []).includes(partId)) send('favorite', { round, voterId: partId, songId });
+        }
+      }
       const entries = Object.entries(pendingRef.current);
       if (!b || b.kind !== 'vote' || !entries.length) return;
       ticks += 1;
@@ -140,13 +157,14 @@ export function PhoneGame({ code }) {
     content = <div className="phone-card"><div className="phone-msg">Ansluter till spelet…</div></div>;
   } else if (ballot.kind === 'vote') {
     const s = ballot.song;
-    const confirmedFor = (pid) => ((ballot.votes || {})[s.id] || {})[pid];
+    const confirmedFor = (pid) => starsFromAck(((ballot.acks || {})[s.id] || {})[pid], pid, s.id);
     content = (
       <div className="phone-card">
         <div className="phone-eyebrow">{ballot.label} · Låt {ballot.songIndex + 1} av {ballot.songCount}</div>
         <Thumb videoId={s.youtubeId} className="phone-thumb" alt={s.title} />
         <div className="phone-song-title">{s.title}</div>
-        {s.artist && <div className="phone-song-artist">{s.artist}{s.year ? ' · ' + s.year : ''}</div>}
+        {s.artist && <div className="phone-song-artist">{s.artist}</div>}
+        <SongMeta song={s} center />
         {s.pickedBy && <div className="phone-picker">Vald av {s.pickedBy}</div>}
         {parts.length === 0
           ? <div className="phone-msg" style={{ marginTop: 16 }}>Skriv ditt namn nedan för att rösta.</div>
@@ -157,7 +175,8 @@ export function PhoneGame({ code }) {
             const value = pend != null ? pend : confirmed || 0;
             const sending = pend != null && pend !== confirmed;
             return (
-              <div key={p.id} className="phone-vote-row">
+              // Keyed by song as well, so nothing from the last song is left on the stars.
+              <div key={s.id + ':' + p.id} className="phone-vote-row">
                 <div className="phone-vote-name">
                   {p.name}
                   {sending ? <span className="phone-sending"> skickar…</span> : confirmed ? <span className="ok"> ✓</span> : null}
@@ -166,6 +185,7 @@ export function PhoneGame({ code }) {
               </div>
             );
           })}
+        {parts.length > 0 && <div className="phone-secret">🤫 Bara du ser dina stjärnor</div>}
         {s.facts && s.facts.length > 0 && (
           <div className="phone-facts">
             <div className="facts-title">💡 Visste du?</div>
@@ -174,76 +194,58 @@ export function PhoneGame({ code }) {
         )}
       </div>
     );
-  } else if (ballot.kind === 'tiebreak') {
-    const mine = parts.filter((p) => ballot.questions && ballot.questions[p.id]);
-    content = mine.length === 0
+  } else if (ballot.kind === 'favorite') {
+    const mine = parts.filter((p) => (ballot.askIds || []).includes(p.id));
+    const answered = new Set(ballot.answered || []);
+    content = ballot.decided || mine.length === 0
       ? (
         <div className="phone-card">
-          <div className="phone-msg">
-            {tbAnsweredRound === ballot.round
-              ? 'Klart! Väntar på att de andra väljer… ⏳'
-              : 'Några har lika betyg på flera låtar och väljer nu sin favorit. Vänta lite… ⏳'}
-          </div>
+          <div className="phone-msg">{ballot.decided ? 'Rösterna räknas på TV:n! 📺' : 'Utslagsröstning! De som röstade i den här omgången väljer nu. Titta på TV:n 📺'}</div>
         </div>
       )
       : (
         <div>
           {mine.map((p) => {
-            const q = ballot.questions[p.id];
-            const sig = q.options.map((o) => o.id).join(',');
-            const sent = tbSent[p.id] === sig;
+            const key = ballot.round + '|' + p.id;
+            const picked = favSent[key];
             const pick = (songId) => {
-              send('tiebreak_pick', { round: ballot.round, voterId: p.id, songId });
-              setTbSent((x) => ({ ...x, [p.id]: sig }));
-              setTbAnsweredRound(ballot.round);
+              setFavSent((x) => ({ ...x, [key]: songId }));
+              send('favorite', { round: ballot.round, voterId: p.id, songId });
             };
             return (
               <div key={p.id} className="phone-card" style={{ marginBottom: 14 }}>
-                <div className="phone-eyebrow">Oavgjort för {p.name}!</div>
-                <div className="phone-h">{q.again ? 'Och vilken av de här är bäst?' : 'Vilken gillar du mest?'}</div>
-                <div className="muted small" style={{ marginBottom: 12 }}>Du gav <StarsText stars={q.stars} simple={p.simple} /> till alla de här.</div>
+                <div className="phone-eyebrow">Utslagsröstning · {p.name}</div>
+                <div className="phone-h">Vilken är din favorit?</div>
+                <div className="muted small" style={{ marginBottom: 12 }}>
+                  Låtarna fick lika många poäng. {ballot.spots === 1 ? 'Bara en' : ballot.spots} kan gå vidare.
+                </div>
                 <div className="tb-options phone">
-                  {q.options.map((o) => (
-                    <button key={o.id} className={'tb-option' + (sent ? ' dim' : '')} onClick={() => pick(o.id)}>
+                  {ballot.options.map((o) => (
+                    <button key={o.id} className={'tb-option' + (picked === o.id ? ' picked' : picked ? ' dim' : '')} onClick={() => pick(o.id)}>
                       <Thumb videoId={o.youtubeId} />
                       <span className="tb-title">{o.title}</span>
                       <span className="tb-artist">{o.artist}</span>
                     </button>
                   ))}
                 </div>
-                {sent && <div className="phone-sending" style={{ marginTop: 8 }}>skickar…</div>}
-                <button className="link-btn" style={{ marginTop: 10 }} onClick={() => send('tiebreak_random', { round: ballot.round, voterId: p.id })}>🎲 Kan inte välja, slumpa!</button>
+                {picked && !answered.has(p.id) && <div className="phone-sending" style={{ marginTop: 8 }}>skickar…</div>}
+                {answered.has(p.id) && <div className="ok" style={{ marginTop: 8 }}>✓ Din röst är med. Du kan ändra dig tills rösterna räknas.</div>}
               </div>
             );
           })}
         </div>
       );
   } else if (ballot.kind === 'reveal') {
-    const beat = ballot.beat;
-    const me = beat && beat.kind === 'twelvePending' ? parts.find((p) => p.id === beat.voterId) : null;
-    const beatSig = beat ? beat.kind + ':' + beat.voterId : '';
-    const who = beat && beat.voterId ? (ballot.voters.find((v) => v.id === beat.voterId) || {}).name : null;
-    content = me
-      ? (
-        <div className="phone-card phone-turn">
-          <div className="phone-eyebrow">Din tur, {me.name}!</div>
-          <button className="btn btn-gold phone-big-btn" disabled={pressed === beatSig} onClick={() => { setPressed(beatSig); send('reveal_press', { voterId: me.id }); }}>
-            🎤 Ge mina 12 poäng!
-          </button>
-          <div className="muted small" style={{ marginTop: 10 }}>Titta på TV:n när du trycker!</div>
-        </div>
-      )
-      : (
-        <div className="phone-card">
-          <div className="phone-msg">
-            {ballot.started ? 'Poängen avslöjas på TV:n! 📺' : 'Snart kommer poängen. Titta på TV:n! 📺'}
-            {who && <div className="phone-now">Nu: röster från <b>{who}</b></div>}
-          </div>
-        </div>
-      );
+    content = (
+      <div className="phone-card">
+        <div className="phone-msg">{ballot.started ? 'Poängen avslöjas på TV:n! 📺' : 'Snart kommer poängen. Titta på TV:n! 📺'}</div>
+        <div className="muted small" style={{ marginTop: 8 }}>Ingen får veta vem som gav vad 🤫</div>
+      </div>
+    );
   } else {
     const msgs = {
       setup: parts.length ? 'Du är med! Väntar på att spelet ska börja…' : 'Skriv ditt namn nedan så är du med!',
+      lineup: 'Låtarna lottas in i deltävlingar. Titta på TV:n! 🎲',
       groupIntro: 'En ny deltävling börjar. Titta på TV:n! 🎬',
       finalIntro: 'Dags för FINALEN! Titta på TV:n! 🏆',
       groupRecap: 'Recap på TV:n. Minns du låtarna? 👀',
